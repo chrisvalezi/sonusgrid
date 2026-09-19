@@ -1,0 +1,4 @@
+# All paths are relative to debian/sonus (DESTDIR set by Makefile).
+# debian/rules runs `make install DESTDIR=$(CURDIR)/debian/sonus` which
+# already places everything correctly; this file exists only to declare
+# manpages once we add them.

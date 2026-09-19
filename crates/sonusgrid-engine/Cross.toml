@@ -1,0 +1,15 @@
+# Cross.toml — pre-installs ALSA dev headers in the cross-rs Docker container
+# for non-native architectures. Without this, alsa-sys-all's pkg-config probe
+# fails on arm64.
+
+[target.aarch64-unknown-linux-gnu]
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt-get update && apt-get --assume-yes install libasound-dev:$CROSS_DEB_ARCH",
+]
+
+[target.armv7-unknown-linux-gnueabihf]
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt-get update && apt-get --assume-yes install libasound-dev:$CROSS_DEB_ARCH",
+]

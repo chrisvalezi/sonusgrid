@@ -1,0 +1,10 @@
+usr/bin
+usr/lib/x86_64-linux-gnu/alsa-lib
+usr/lib/systemd/user
+usr/lib/systemd/user/pipewire.service.d
+usr/libexec/sonusgrid
+usr/share/applications
+usr/share/icons/hicolor/scalable/apps
+usr/share/sonusgrid
+usr/share/sonusgrid/gui
+usr/share/doc/sonusgrid

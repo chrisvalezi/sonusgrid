@@ -1,0 +1,6 @@
+# SonusGrid: grant the `audio` group rw access to PTP hardware clocks so
+# Statime (running as a regular user via the systemd --user manager) can open
+# /dev/ptp* without needing root. Without this rule, /dev/ptp0 stays at the
+# kernel default of root:root mode 0600 and SonusGrid's clock service fails
+# at start-up with "Permission denied".
+KERNEL=="ptp[0-9]*", GROUP="audio", MODE="0660"

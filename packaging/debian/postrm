@@ -1,0 +1,30 @@
+#!/bin/sh
+# postrm for sonusgrid
+set -e
+
+case "$1" in
+    purge)
+        # Remove the PipeWire drop-in we installed. Don't touch /etc/.
+        rm -f /usr/lib/systemd/user/pipewire.service.d/sonusgrid-clock.conf || true
+        rmdir --ignore-fail-on-non-empty /usr/lib/systemd/user/pipewire.service.d 2>/dev/null || true
+
+        # Remove the ld.so.conf drop-in created by postinst.
+        rm -f /etc/ld.so.conf.d/00-sonusgrid-pipewire-jack.conf || true
+
+        if command -v ldconfig >/dev/null; then
+            ldconfig
+        fi
+        if command -v udevadm >/dev/null; then
+            udevadm control --reload-rules || true
+        fi
+        ;;
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+exit 0

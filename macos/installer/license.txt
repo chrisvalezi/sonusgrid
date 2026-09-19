@@ -1,0 +1,14 @@
+SonusGrid is licensed under GPLv3-or-later.
+
+The full license text accompanies this software at /Applications/SonusGrid.app/Contents/Resources/COPYING.
+
+This software bundles components under their own licenses:
+
+  - Inferno (https://github.com/teodly/inferno) — GPLv3-or-later OR AGPLv3-or-later
+  - Statime (https://github.com/pendulum-project/statime, modified fork) — Apache-2.0 OR MIT
+  - PipeWire/CoreAudio integrations — see /Applications/SonusGrid.app/Contents/Resources/COPYING.thirdparty
+
+By installing this software you agree to the terms of GPLv3-or-later.
+
+Compatible with Dante audio networks; not affiliated with, endorsed by, or
+sponsored by Audinate Pty Ltd. "Dante" is a registered trademark of Audinate.

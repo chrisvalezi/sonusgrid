@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>SonusGridHAL</string>
+    <key>CFBundleIdentifier</key>
+    <string>io.sonusgrid.HAL</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>SonusGridHAL</string>
+    <key>CFBundlePackageType</key>
+    <string>BNDL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.3.0</string>
+    <key>CFBundleVersion</key>
+    <string>0.3.0</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>© 2026 SonusGrid contributors. GPLv3-or-later. Compatible with Dante audio networks; not affiliated with Audinate Pty Ltd.</string>
+
+    <!-- AudioServerPlugIn entry — actual factory function provided by the
+         Objective-C shim; Swift cannot expose a C function pointer struct. -->
+    <key>CFPlugInDynamicRegistration</key>
+    <string>NO</string>
+    <key>CFPlugInFactories</key>
+    <dict>
+        <key>00000000-0000-0000-0000-000000000000</key>
+        <string>SonusGridHALEntry</string>
+    </dict>
+    <key>CFPlugInTypes</key>
+    <dict>
+        <key>443ABAB8-E7B3-491A-B985-BEB9187030DB</key>
+        <array>
+            <string>00000000-0000-0000-0000-000000000000</string>
+        </array>
+    </dict>
+
+    <!-- HAL plugins must be code-signed with the bundle's TeamID and
+         hardened runtime. Notarization is mandatory for end-user installs. -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>SonusGrid routes Dante network audio to and from this Mac.</string>
+</dict>
+</plist>

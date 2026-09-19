@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="2">
+    <title>SonusGrid</title>
+    <organization>io.sonusgrid</organization>
+
+    <welcome    file="welcome.html"   mime-type="text/html" />
+    <license    file="license.txt"    mime-type="text/plain" />
+    <conclusion file="conclusion.html" mime-type="text/html" />
+
+    <options customize="never" allow-external-scripts="no" require-scripts="no" />
+    <volume-check>
+        <allowed-os-versions>
+            <os-version min="13.0" />
+        </allowed-os-versions>
+    </volume-check>
+
+    <choices-outline>
+        <line choice="default">
+            <line choice="io.sonusgrid.SonusGrid" />
+        </line>
+    </choices-outline>
+
+    <choice id="default" />
+    <choice id="io.sonusgrid.SonusGrid" visible="false">
+        <pkg-ref id="io.sonusgrid.SonusGrid" />
+    </choice>
+    <pkg-ref id="io.sonusgrid.SonusGrid"
+             version="0.3.0"
+             auth="root"
+             onConclusion="none">
+        SonusGrid-0.3.0-universal.unsigned.pkg
+    </pkg-ref>
+</installer-gui-script>

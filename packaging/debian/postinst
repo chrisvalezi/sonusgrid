@@ -1,0 +1,86 @@
+#!/bin/sh
+# postinst for sonusgrid
+set -e
+
+case "$1" in
+    configure)
+        # 1. Grant Statime the capabilities it needs to steer the system clock
+        # without sudo at runtime. (sonusgrid CLI execv()s this binary from
+        # _internal-statime-exec, so caps must be on the target binary.)
+        if [ -x /usr/libexec/sonusgrid/statime ] && command -v setcap >/dev/null; then
+            setcap cap_sys_time,cap_net_bind_service,cap_net_admin+ep \
+                /usr/libexec/sonusgrid/statime || true
+        fi
+
+        # 2. Make libjack.so.0 resolve to PipeWire's JACK shim so the unified
+        # bridge's embedded JACK client connects to the PipeWire graph instead
+        # of the (absent) jackd2 server. Without this, the bridge falls back
+        # to "JACK unavailable" and DAWs (Reaper/Ardour) don't see SonusGrid.
+        # We can't rely on LD_LIBRARY_PATH because the bridge ends up with
+        # AT_SECURE set after the parent's setcap, and glibc scrubs LD_*.
+        PIPEWIRE_JACK_DIR=
+        for d in /usr/lib/x86_64-linux-gnu/pipewire-0.3/jack \
+                 /usr/lib/aarch64-linux-gnu/pipewire-0.3/jack \
+                 /usr/lib/pipewire-0.3/jack; do
+            if [ -e "$d/libjack.so.0" ]; then
+                PIPEWIRE_JACK_DIR=$d
+                break
+            fi
+        done
+        if [ -n "$PIPEWIRE_JACK_DIR" ]; then
+            echo "$PIPEWIRE_JACK_DIR" > /etc/ld.so.conf.d/00-sonusgrid-pipewire-jack.conf
+        fi
+
+        # 3. Refresh ldconfig + udev rules + icon cache + desktop database.
+        if command -v ldconfig >/dev/null; then
+            ldconfig
+        fi
+        if command -v udevadm >/dev/null; then
+            udevadm control --reload-rules || true
+            udevadm trigger /dev/ptp* 2>/dev/null || true
+        fi
+        if command -v gtk-update-icon-cache >/dev/null; then
+            gtk-update-icon-cache -q -t /usr/share/icons/hicolor || true
+        fi
+        if command -v update-desktop-database >/dev/null; then
+            update-desktop-database -q || true
+        fi
+
+        # 4. systemd user units are NOT enabled here. Per-user enablement
+        # happens on first `sonusgrid start` or first GUI launch — this avoids
+        # the multi-user trap.
+
+        # 5. First-run hint, including the `audio` group requirement (PTP
+        # device access flows through that group via our udev rule).
+        IN_AUDIO=0
+        if [ -n "${SUDO_USER:-}" ] && id -nG "$SUDO_USER" 2>/dev/null | grep -qw audio; then
+            IN_AUDIO=1
+        fi
+        cat <<EOF
+
+SonusGrid instalado.
+  Próximo passo:    sonusgrid doctor
+  Para iniciar:     sonusgrid start      (ou: sonusgrid restart, se já estava rodando)
+  GUI:              menu de aplicativos -> SonusGrid
+
+Compatible with Dante audio networks; not affiliated with Audinate Pty Ltd.
+EOF
+        if [ "$IN_AUDIO" = "0" ] && [ -n "${SUDO_USER:-}" ]; then
+            cat <<EOF
+[!] Adicione seu usuário ao grupo 'audio' para acesso ao PTP de hardware:
+       sudo usermod -aG audio $SUDO_USER
+    Depois faça logout/login (ou reinicie) para a mudança valer.
+
+EOF
+        fi
+        ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+exit 0

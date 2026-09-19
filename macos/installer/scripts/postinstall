@@ -1,0 +1,23 @@
+#!/bin/bash
+# postinstall — fired by the .pkg after files are in place.
+# Loads the launchd job and reloads coreaudiod so the HAL plugin is picked up.
+set -e
+
+# Create runtime + log directories.
+mkdir -p /var/run/sonusgrid /var/log/sonusgrid
+chown root:wheel /var/run/sonusgrid /var/log/sonusgrid
+chmod 0755 /var/run/sonusgrid /var/log/sonusgrid
+
+# Set capability-equivalent on Statime via launchd plist (RunAsUser=root).
+chown root:wheel /usr/local/libexec/sonusgrid/statime-macos
+chmod 0755 /usr/local/libexec/sonusgrid/statime-macos
+
+# Bootstrap the launchd job. `bootout` first to drop any prior version.
+launchctl bootout system /Library/LaunchDaemons/io.sonusgrid.clock.plist 2>/dev/null || true
+launchctl bootstrap system /Library/LaunchDaemons/io.sonusgrid.clock.plist || true
+launchctl enable system/io.sonusgrid.clock || true
+
+# Reload coreaudiod so it picks up the new HAL plugin.
+launchctl kickstart -k system/com.apple.audio.coreaudiod || killall coreaudiod || true
+
+exit 0

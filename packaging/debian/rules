@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+# debian/rules for sonus.
+#
+# Note: we don't `dh_auto_build` the Rust crate here — vendored builds of
+# Statime and Inferno are pre-built outside the Debian source tree (Makefile
+# orchestrates that). This rules file just stages the prebuilt artefacts into
+# debian/sonus/.
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+SONUS_SOURCE_DIR ?= $(shell pwd)/..
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(MAKE) -C $(SONUS_SOURCE_DIR) build
+
+override_dh_auto_install:
+	$(MAKE) -C $(SONUS_SOURCE_DIR) install \
+		DESTDIR=$(CURDIR)/debian/sonusgrid PREFIX=/usr
+
+override_dh_auto_clean:
+	# don't run cargo clean from the deb build
+	true
+
+override_dh_auto_test:
+	# unit tests live in the source tree, not on the build host
+	true
+
+# Skip shlibdeps for cross-architecture builds — dpkg-shlibdeps can't resolve
+# foreign-arch libraries on the host. The Depends list in control already
+# enumerates runtime packages by name so we don't need autodetection.
+override_dh_shlibdeps:
+	@if [ "$$(dpkg --print-architecture)" = "$(DEB_HOST_ARCH)" ]; then \
+	    dh_shlibdeps; \
+	else \
+	    echo "skipping dh_shlibdeps (cross-build $(DEB_HOST_ARCH))"; \
+	fi

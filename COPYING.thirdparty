@@ -1,0 +1,30 @@
+SonusGrid aggregates several third-party components. Each is licensed under
+its own terms; the following table summarises them.
+
+  Component                       Upstream                                License
+  ────────────────────────────    ────────────────────────────────────    ──────────────────────
+  SonusGrid Engine (forked)       https://github.com/teodly/inferno       GPLv3-or-later OR
+   — see crates/sonusgrid-engine/NOTICE for the fork lineage              AGPLv3-or-later
+  Statime (PTP daemon)            https://github.com/teodly/statime       Apache-2.0 OR MIT
+                                  (fork of pendulum-project/statime)
+  alsa-rs                         https://github.com/diwic/alsa-rs        Apache-2.0 OR MIT
+  libpulse-binding (Rust)         https://docs.rs/libpulse-binding        LGPLv2.1+
+  PipeWire (server, runtime)      https://pipewire.org/                   MIT
+  GTK4 / libadwaita               https://gtk.org/, https://gnome.org/    LGPLv2.1+
+  PyGObject                       https://pygobject.gnome.org/            LGPLv2.1+
+
+SonusGrid's own source code (everything under crates/sonus-cli/,
+crates/sonusgrid-bridge/, gui/, systemd/, alsa/, packaging/, docs/, tests/)
+is licensed under GPLv3-or-later; see COPYING.
+
+The bundled SonusGrid Engine (crates/sonusgrid-engine/) is a fork of Inferno
+that makes SonusGrid a derivative work of Inferno and pins the distributed
+binary to GPLv3-or-later. See crates/sonusgrid-engine/NOTICE for full
+attribution.
+
+Statime and PipeWire are kept as separate processes; their licenses do not
+contaminate SonusGrid.
+
+Trademark notice: "Dante" is a trademark of Audinate Pty Ltd. Sonus is not
+affiliated with, endorsed by, or sponsored by Audinate. The trademark is
+referenced solely to describe interoperability.

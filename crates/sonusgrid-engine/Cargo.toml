@@ -1,0 +1,35 @@
+# SonusGrid Engine — workspace
+#
+# Forked from https://github.com/teodly/inferno (Inferno-AoIP) on 2026-04-30.
+# Original work © Teodor "teodly" Lumifaza, GPLv3-or-later OR AGPLv3-or-later.
+# Subsequent modifications © SonusGrid contributors, same dual licence.
+# See NOTICE for the upstream credit and the change log.
+
+[workspace]
+resolver = "2"
+members = [
+    "aoip",
+    "alsa-plugin",
+    "sonusgrid-pipe",
+    "searchfire",
+    "alsa-sys-all",
+    "usrvclock-rs",
+]
+
+[workspace.metadata.cross.target.aarch64-unknown-linux-gnu]
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt-get update && apt-get --assume-yes install libasound-dev:$CROSS_DEB_ARCH",
+]
+
+[workspace.metadata.cross.target.armv7-unknown-linux-gnueabihf]
+pre-build = [
+    "dpkg --add-architecture $CROSS_DEB_ARCH",
+    "apt-get update && apt-get --assume-yes install libasound-dev:$CROSS_DEB_ARCH",
+]
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

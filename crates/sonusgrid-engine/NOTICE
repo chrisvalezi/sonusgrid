@@ -1,0 +1,54 @@
+SonusGrid Engine
+================
+
+This crate (sonusgrid_engine and its sibling crates inside this workspace)
+is a fork of Inferno-AoIP, by Teodor "teodly" Lumifaza, originally
+distributed at https://github.com/teodly/inferno under the terms of the
+GNU General Public License version 3 or later, OR the GNU Affero General
+Public License version 3 or later (dual-licensed; the user picks).
+
+Fork date: 2026-04-30
+Source upstream: https://github.com/teodly/inferno
+                 (last imported commit: 584241a "cargo fmt")
+
+The fork preserves the original copyright notices and SPDX licence
+headers in every file. Continued modifications © SonusGrid contributors,
+licensed under the same dual GPLv3-or-later / AGPLv3-or-later terms.
+
+Substantive changes from upstream:
+
+  - Crate names rebranded to remove the "Inferno" identity from
+    user-visible surfaces:
+      * inferno_aoip          → sonusgrid_engine        (in `aoip/`)
+      * alsa_pcm_inferno      → sonusgrid_alsa_plugin   (in `alsa-plugin/`)
+      * inferno2pipe          → sonusgrid_pipe          (in `sonusgrid-pipe/`)
+  - mDNS TXT record `mf` field changed from "Inferno-AoIP" to "SonusGrid".
+  - State directory moved from `~/.local/state/inferno_aoip/` to
+    `~/.local/state/sonusgrid/`.
+  - ALSA plugin output renamed:
+      libasound_module_pcm_inferno.so → libasound_module_pcm_sonusgrid.so
+    Plugin entry symbol renamed from `_snd_pcm_inferno_open` to
+    `_snd_pcm_sonusgrid_open`.
+  - Channel friendly_names default to numeric form ("01", "02", …)
+    instead of "TX 1"/"RX 1".
+
+The mDNS sub-crate `searchfire` (in this workspace) is itself a fork by
+the upstream Inferno author of WilliamVenner's `searchlight` crate. It
+is preserved here at its upstream layout to make merges from teodly's
+upstream tree straightforward.
+
+The `alsa-sys-all` and `usrvclock-rs` sub-crates are kept verbatim from
+upstream; they are infrastructure (FFI bindings; unix-socket helper) and
+have nothing Inferno-specific in them.
+
+License-header summary
+
+  GPLv3-or-later: see LICENSE.GPL  (or LICENSE-GPL inside aoip/)
+  AGPLv3-or-later: see LICENSE-AGPL  inside aoip/
+  You may choose either licence when redistributing the modified work.
+
+Trademark
+
+  "Dante" is a trademark of Audinate Pty Ltd. SonusGrid is not affiliated
+  with, endorsed by, or sponsored by Audinate. The trademark is used only
+  to describe interoperability.

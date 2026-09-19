@@ -1,0 +1,56 @@
+sonusgrid (0.2.1-1) unstable; urgency=medium
+
+  * Start-up reliability overhaul ("SonusGrid never starts" bugs):
+    - Runtime sockets/FIFO moved from /tmp to $XDG_RUNTIME_DIR/sonusgrid
+      (per-user, always writable, wiped on logout). No more failures when
+      /tmp has odd permissions or fs.protected_regular interferes.
+    - `sonusgrid start` now validates the config first, clears the systemd
+      "failed" state (start-rate limiter), starts without blocking and then
+      verifies both units, printing the journal tail on failure.
+    - Units no longer hit the start-rate limit (StartLimitIntervalSec=0) and
+      the clock unit waits (bounded) for the NIC to get an IPv4 at boot.
+    - PipeWire is restarted only the first time the drop-in is applied,
+      instead of on every start (which killed the audio unit mid-start).
+    - ExecStop unloads only SonusGrid's own PipeWire modules, not every
+      null-sink the user has.
+  * doctor: new checks for the runtime dir, audio group / /dev/ptp*, failed
+    units and the PipeWire-JACK ld.so drop-in; config check validates the
+    interface, PTP version and sample rate.
+  * GUI: start/stop runs off the UI thread and shows the CLI error; status
+    no longer reports "partial" when JACK is simply unavailable; shows a
+    distinct "failed" state.
+  * Statime source is now vendored in-tree (was a symlink outside the repo).
+
+ -- Chris Valezi <chrisvalezi@gmail.com>  Sat, 19 Sep 2026 12:00:00 -0300
+
+sonusgrid (0.2.0-2) unstable; urgency=medium
+
+  * Boot reliability: the audio bridge regenerates ~/.config/alsa/sonusgrid.conf
+    on every service start, picking up DHCP-renewed IPs. Fixes services stuck
+    in "starting" after reboot when the NIC's lease changed.
+  * Postinst now installs a udev rule (60-sonusgrid-ptp.rules) granting the
+    audio group rw on /dev/ptp*, so Statime can open the PTP hardware clock.
+  * Postinst now writes /etc/ld.so.conf.d/00-sonusgrid-pipewire-jack.conf so
+    libjack.so.0 resolves to PipeWire-jack instead of jackd2's libjack —
+    required because our setcap'd binary triggers AT_SECURE which scrubs
+    LD_LIBRARY_PATH.
+  * GUI: live network throughput sparklines on the Status page; persistent
+    JACK buffer choice via PipeWire conf drop-in.
+
+ -- SonusGrid Maintainers <sonusgrid@example.invalid>  Fri, 08 May 2026 14:30:00 -0300
+
+sonusgrid (0.2.0-1) unstable; urgency=medium
+
+  * Renamed the project from "Sonus" to "SonusGrid".
+  * Network interface picker is now mandatory; the GUI lists each interface
+    with its IPv4 address. Doctor errors when none is selected.
+  * Visual refresh of the GUI: bigger hero status card, gradient accent,
+    rounded toggle button, refined typography.
+
+ -- SonusGrid Maintainers <sonusgrid@example.invalid>  Thu, 30 Apr 2026 15:00:00 -0300
+
+sonus (0.1.0-1) unstable; urgency=medium
+
+  * Initial release as Sonus.
+
+ -- Sonus Maintainers <sonus@example.invalid>  Thu, 30 Apr 2026 13:00:00 -0300

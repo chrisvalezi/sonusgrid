@@ -1,0 +1,27 @@
+[Unit]
+Description=SonusGrid PTP clock (Statime)
+Documentation=man:sonusgrid(1) https://github.com/chrisvalezi/sonusgrid
+ConditionPathExists=%h/.config/sonusgrid/config.toml
+# Never give up because of the start-rate limiter: at boot the NIC may take
+# a while to get an IP and we'd rather keep retrying every few seconds than
+# sit in "failed" until someone runs `systemctl --user reset-failed`.
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+# Wait (bounded, ~45 s) for the configured interface to have an IPv4 before
+# handing over to Statime — see `sonusgrid _internal-wait-network`.
+ExecStartPre=/usr/bin/sonusgrid config check --quiet
+ExecStartPre=/usr/bin/sonusgrid _internal-wait-network
+ExecStart=/usr/bin/sonusgrid _internal-statime-exec
+Restart=on-failure
+RestartSec=3
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+# Sockets live in %t/sonusgrid (= $XDG_RUNTIME_DIR/sonusgrid). Preserve so
+# the audio unit's engine can keep talking to the clock across restarts.
+RuntimeDirectory=sonusgrid
+RuntimeDirectoryPreserve=yes
+RuntimeDirectoryMode=0700
+
+[Install]
+WantedBy=default.target

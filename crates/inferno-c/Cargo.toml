@@ -1,0 +1,30 @@
+[package]
+name = "inferno-c"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "C ABI shim over the inferno_aoip Dante protocol library, used by the macOS HAL plugin"
+
+[lib]
+name = "inferno_c"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+# inferno_aoip lives in vendor/inferno/inferno_aoip — added once the build
+# matrix is wired up. For now we keep the crate compileable on its own with
+# the dependency commented out until the CoreAudio bridge work lands.
+# inferno_aoip = { path = "../../vendor/inferno/inferno_aoip" }
+crossbeam-queue = "0.3"
+parking_lot = "0.12"
+once_cell = "1"
+thiserror = "1"
+log = "0.4"
+
+[build-dependencies]
+cbindgen = "0.27"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

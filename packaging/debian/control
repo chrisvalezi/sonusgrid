@@ -1,0 +1,43 @@
+Source: sonusgrid
+Section: sound
+Priority: optional
+Maintainer: Chris Valezi <chrisvalezi@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+ cargo,
+ rustc (>= 1.75),
+ libasound2-dev,
+ libpulse-dev,
+ libjack-jackd2-dev | libjack-dev,
+ pkg-config
+Standards-Version: 4.6.2
+Homepage: https://github.com/chrisvalezi/sonusgrid
+Rules-Requires-Root: binary-targets
+
+Package: sonusgrid
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ libasound2 | libasound2t64,
+ alsa-utils,
+ pipewire (>= 0.3.65),
+ pipewire-pulse,
+ pulseaudio-utils,
+ libpulse0,
+ python3 (>= 3.10),
+ python3-gi,
+ gir1.2-gtk-4.0,
+ gir1.2-adw-1,
+ libcap2-bin,
+ systemd
+Recommends: pavucontrol,
+ avahi-utils
+Suggests: linux-lowlatency,
+ wireshark
+Description: Linux audio app compatible with Dante audio networks
+ SonusGrid turns a Linux box into an audio endpoint that interoperates
+ with Dante audio networks. It bundles a PTP clock daemon, an ALSA
+ plugin, and a PipeWire bridge so any Linux app can send and receive
+ audio to and from Dante-compatible hardware.
+ .
+ Compatible with Dante audio networks; not affiliated with Audinate Pty
+ Ltd. "Dante" is a trademark of Audinate. This package only references
+ the trademark to describe interoperability.

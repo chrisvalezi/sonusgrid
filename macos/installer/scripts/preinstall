@@ -1,0 +1,10 @@
+#!/bin/bash
+# preinstall — runs before files are written. Stops any prior SonusGrid
+# launchd job and removes the old HAL bundle so coreaudiod can install the
+# new one cleanly.
+set -e
+
+launchctl bootout system /Library/LaunchDaemons/io.sonusgrid.clock.plist 2>/dev/null || true
+rm -rf /Library/Audio/Plug-Ins/HAL/SonusGrid.driver 2>/dev/null || true
+
+exit 0

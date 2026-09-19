@@ -1,0 +1,32 @@
+# Rust
+target/
+**/target/
+*.rs.bk
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Debian / AppImage build output
+build/
+dist/
+*.deb
+*.ddeb
+*.buildinfo
+*.changes
+*.AppImage
+*.pkg
+*.dmg
+
+# macOS / Xcode
+macos/**/build/
+macos/**/DerivedData/
+macos/**/*.xcuserstate
+xcuserdata/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store

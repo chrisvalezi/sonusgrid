@@ -1,0 +1,36 @@
+[package]
+name = "sonus-cli"
+version = "0.2.1"
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "SonusGrid — Linux audio app compatible with Dante audio networks"
+repository = "https://github.com/chrisvalezi/sonusgrid"
+default-run = "sonusgrid"
+
+[[bin]]
+name = "sonusgrid"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive", "wrap_help"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+anyhow = "1"
+thiserror = "1"
+dirs = "5"
+libc = "0.2"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Same crate the engine uses to read Statime's clock overlay — lets `start`
+# wait for a real PTP lock before handing the ALSA device to the bridge.
+usrvclock = { path = "../sonusgrid-engine/usrvclock-rs", default-features = false, features = ["unix"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# macOS-specific helpers go here.
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

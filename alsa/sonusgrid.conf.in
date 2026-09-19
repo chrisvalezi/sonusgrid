@@ -1,0 +1,24 @@
+# Template for ~/.config/alsa/sonusgrid.conf — rendered by `sonusgrid` from
+# the fields under [device] / [network] in ~/.config/sonusgrid/config.toml.
+# This file is normally generated; manual edits are overwritten on next start.
+
+pcm.sonusgrid {
+    type sonusgrid
+    NAME            "@DEVICE_NAME@"
+    SAMPLE_RATE     "@SAMPLE_RATE@"
+    RX_CHANNELS     "@RX_CHANNELS@"
+    TX_CHANNELS     "@TX_CHANNELS@"
+    BIND_IP         "@BIND_IP@"
+    RX_LATENCY_NS   "@RX_LATENCY_NS@"
+    TX_LATENCY_NS   "@TX_LATENCY_NS@"
+    CLOCK_PATH      "@CLOCK_PATH@"
+    hint {
+        show on
+        description "SonusGrid virtual audio device"
+    }
+}
+
+pcm.sonusgrid_stereo {
+    type plug
+    slave.pcm "sonusgrid"
+}

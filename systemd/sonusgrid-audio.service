@@ -1,0 +1,31 @@
+[Unit]
+Description=SonusGrid unified audio bridge (PipeWire null-sink + JACK client + ALSA)
+Documentation=man:sonusgrid(1) https://github.com/chrisvalezi/sonusgrid
+After=sonusgrid-clock.service pipewire.service pipewire-pulse.service
+Requires=sonusgrid-clock.service
+BindsTo=pipewire.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/sonusgrid _internal-bridge-exec
+ExecStop=/usr/bin/sonusgrid _internal-bridge-stop
+Restart=on-failure
+RestartSec=3
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+# Use PipeWire's libjack (PipeWire-jack compat) so the bridge's JACK client
+# integrates with the PipeWire graph instead of failing on the missing jackd2
+# daemon socket. The unified bridge registers a JACK client "SonusGrid" with
+# 16 in + 16 out ports for DAW use; system audio (Spotify, etc.) still routes
+# via the PipeWire null-sink, and both legs are mixed per-channel before ALSA.
+# (postinst also writes /etc/ld.so.conf.d/00-sonusgrid-pipewire-jack.conf,
+# which is what actually wins when LD_LIBRARY_PATH gets scrubbed.)
+Environment=LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/pipewire-0.3/jack
+RuntimeDirectory=sonusgrid
+RuntimeDirectoryPreserve=yes
+RuntimeDirectoryMode=0700
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=SonusGrid
+GenericName=Audio Network Endpoint
+GenericName[pt_BR]=Ponto de Rede de Áudio
+Comment=Linux audio endpoint compatible with Dante audio networks
+Comment[pt_BR]=Endpoint de áudio Linux compatível com redes Dante
+Exec=sonusgrid-gtk
+Icon=io.sonusgrid.SonusGrid
+Terminal=false
+Categories=AudioVideo;Audio;
+Keywords=audio;dante;aoip;rtp;network;sonusgrid;
+StartupNotify=true
+StartupWMClass=io.sonusgrid.SonusGrid

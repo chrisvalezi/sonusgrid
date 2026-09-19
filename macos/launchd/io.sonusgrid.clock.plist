@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  io.sonusgrid.clock — system-level launchd job for the PTP daemon.
+  Installed at /Library/LaunchDaemons/io.sonusgrid.clock.plist by the .pkg.
+  Loaded with: sudo launchctl bootstrap system /Library/LaunchDaemons/io.sonusgrid.clock.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>io.sonusgrid.clock</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/libexec/sonusgrid/statime-macos</string>
+        <string>--config</string>
+        <string>/etc/sonusgrid/clock.toml</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+
+    <key>StandardOutPath</key>
+    <string>/var/log/sonusgrid/clock.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/sonusgrid/clock.log</string>
+
+    <key>UserName</key>
+    <string>root</string>
+
+    <key>SoftResourceLimits</key>
+    <dict>
+        <key>NumberOfFiles</key>
+        <integer>4096</integer>
+    </dict>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>RUST_LOG</key>
+        <string>info</string>
+    </dict>
+</dict>
+</plist>

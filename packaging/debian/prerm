@@ -1,0 +1,29 @@
+#!/bin/sh
+# prerm for sonusgrid
+set -e
+
+case "$1" in
+    remove|deconfigure)
+        # Best-effort stop+disable for the invoking user. dpkg runs as root,
+        # but if SUDO_USER is set we can clean up that user's units.
+        if [ -n "$SUDO_USER" ] && command -v loginctl >/dev/null; then
+            su - "$SUDO_USER" -c '
+                systemctl --user stop sonusgrid-audio.service sonusgrid-clock.service 2>/dev/null || true
+                systemctl --user disable sonusgrid-audio.service sonusgrid-clock.service 2>/dev/null || true
+            ' || true
+        fi
+        ;;
+    upgrade)
+        # Keep the user's units enabled across upgrades; postinst tells the
+        # user to `sonusgrid restart` to pick up the new binaries.
+        ;;
+    failed-upgrade)
+        ;;
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+exit 0

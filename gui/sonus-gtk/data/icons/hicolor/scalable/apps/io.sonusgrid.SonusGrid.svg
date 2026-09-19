@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#7b1fa2"/>
+      <stop offset="55%" stop-color="#b71c4d"/>
+      <stop offset="100%" stop-color="#e53935"/>
+    </linearGradient>
+    <linearGradient id="node" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#fce4ec"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.6" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- rounded background -->
+  <rect x="6" y="6" width="116" height="116" rx="22" ry="22" fill="url(#bg)"/>
+
+  <!-- soft inner shadow ring -->
+  <rect x="10" y="10" width="108" height="108" rx="19" ry="19"
+        fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="1.5"/>
+
+  <g filter="url(#glow)" stroke="#ffffff" stroke-linecap="round" fill="none">
+    <!-- outer concentric arcs (sound waves / signal radiating) -->
+    <path d="M 36 64 A 28 28 0 0 1 92 64" stroke-width="3.2" opacity="0.55"/>
+    <path d="M 28 64 A 36 36 0 0 1 100 64" stroke-width="2.6" opacity="0.40"/>
+    <path d="M 20 64 A 44 44 0 0 1 108 64" stroke-width="2.0" opacity="0.25"/>
+
+    <!-- network triangle: three connected nodes -->
+    <line x1="38" y1="92" x2="64" y2="60" stroke-width="3"/>
+    <line x1="90" y1="92" x2="64" y2="60" stroke-width="3"/>
+    <line x1="38" y1="92" x2="90" y2="92" stroke-width="3"/>
+  </g>
+
+  <!-- nodes (filled white dots — drawn on top, no glow) -->
+  <g fill="url(#node)" stroke="#7b1fa2" stroke-width="1.4">
+    <circle cx="64" cy="60" r="7.5"/>
+    <circle cx="38" cy="92" r="6"/>
+    <circle cx="90" cy="92" r="6"/>
+  </g>
+
+  <!-- centre highlight to read as a hub / pulse origin -->
+  <circle cx="64" cy="60" r="3.2" fill="#e53935"/>
+</svg>
