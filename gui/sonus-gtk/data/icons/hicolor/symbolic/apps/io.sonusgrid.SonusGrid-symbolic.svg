@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Symbolic variant: filled geometry only (GTK recolours by forcing fill). -->
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Symbolic variant: filled geometry only (GTK recolours by forcing fill). -->
   <g fill="#2e3436">
     <!-- vertical link -->
     <rect x="7.25" y="3" width="1.5" height="10" rx="0.75"/>
