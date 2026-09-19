@@ -1,10 +1,11 @@
 [project]
 name = "sonus-gtk"
-version = "0.2.1"
+dynamic = ["version"]
 description = "GTK4/libadwaita front-end for SonusGrid"
 authors = [{ name = "SonusGrid contributors" }]
 license = { text = "GPL-3.0-or-later" }
-requires-python = ">=3.10"
+requires-python = ">=3.11"
+dependencies = ["PyGObject>=3.46"]
 
 [project.scripts]
 sonus-gtk = "sonus_gtk.__main__:main"
@@ -14,4 +15,10 @@ requires = ["setuptools >= 61"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["sonus_gtk"]
+packages = ["sonus_gtk", "sonus_gtk.services", "sonus_gtk.pages", "sonus_gtk.widgets"]
+
+[tool.setuptools.package-data]
+sonus_gtk = ["css/*.css"]
+
+[tool.setuptools.dynamic]
+version = { attr = "sonus_gtk.__version__" }

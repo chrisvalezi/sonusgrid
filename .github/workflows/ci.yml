@@ -1,0 +1,62 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request: {}
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container: debian:bookworm        # glibc 2.36 floor → runs on Debian 12+, Ubuntu 24.04+, Mint 22+
+    steps:
+      - name: Build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates curl build-essential pkg-config \
+            devscripts debhelper dpkg-dev fakeroot libasound2-dev libpulse-dev libjack-jackd2-dev python3
+      - uses: actions/checkout@v4
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            crates/sonus-cli
+            crates/sonusgrid-bridge
+            crates/sonusgrid-engine
+            vendor/statime
+      - run: make build
+      - run: make test
+      - run: make run-installer
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-amd64
+          path: |
+            dist/*.deb
+            dist/*.run
+          if-no-files-found: error
+
+  install-test:
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        image: ["debian:bookworm", "ubuntu:24.04"]
+    container: ${{ matrix.image }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: ci-amd64, path: dist }
+      - name: Install with the .run as a regular user
+        run: |
+          apt-get update && apt-get install -y sudo
+          useradd -m tester && echo 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester
+          chmod 755 dist && chmod +x dist/*.run
+          su tester -c "dist/SonusGrid-*.run -- --yes --no-launch"
+          dpkg -s sonusgrid
+          getcap /usr/libexec/sonusgrid/statime | grep cap_sys_time
+          cat /etc/ld.so.conf.d/00-sonusgrid-pipewire-jack.conf
+          id tester | grep -w audio
+          su tester -c "sonusgrid version && sonusgrid config check; sonusgrid doctor || true"
+          su tester -c "dist/SonusGrid-*.run -- --yes --uninstall"
+          ! dpkg -s sonusgrid

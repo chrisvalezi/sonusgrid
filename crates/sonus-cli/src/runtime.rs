@@ -269,6 +269,10 @@ pub fn status(cfg_path: &Path, _lang: Lang, json_out: bool) -> Result<()> {
     let jack_active = audio && jack_client_present();
     #[cfg(target_os = "macos")]
     let jack_active = false;
+    #[cfg(target_os = "linux")]
+    let ptp_obs = if clock { ptp::observe() } else { None };
+    #[cfg(target_os = "macos")]
+    let ptp_obs: Option<serde_json::Value> = None;
 
     if json_out {
         let val = json!({
@@ -284,6 +288,7 @@ pub fn status(cfg_path: &Path, _lang: Lang, json_out: bool) -> Result<()> {
             "device_name": cfg.device.name,
             "interface": cfg.network.interface,
             "ptp_version": cfg.ptp.version,
+            "ptp": ptp_obs,
         });
         println!("{}", serde_json::to_string_pretty(&val)?);
         return Ok(());
@@ -298,6 +303,23 @@ pub fn status(cfg_path: &Path, _lang: Lang, json_out: bool) -> Result<()> {
     println!("  audio service  : {}", audio_state);
     println!("  PipeWire sink  : {}", on_off(sink_loaded));
     println!("  JACK client    : {}", on_off(jack_active));
+    #[cfg(target_os = "linux")]
+    if let Some(p) = &ptp_obs {
+        let offset = p
+            .offset_ns
+            .map(|o| format!(", offset {:+.1} µs", o / 1000.0))
+            .unwrap_or_default();
+        let gm = p
+            .grandmaster
+            .as_deref()
+            .map(|g| format!(", master {g}"))
+            .unwrap_or_default();
+        println!(
+            "  PTP lock       : {} ({}{offset}{gm})",
+            if p.locked { "locked" } else { "acquiring" },
+            p.state.to_lowercase()
+        );
+    }
     if clock_state == "failed" || audio_state == "failed" {
         println!();
         dual_println(

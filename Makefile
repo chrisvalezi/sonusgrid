@@ -10,12 +10,15 @@ PYTHON        ?= python3
 # also flips the install paths (libdir, deb arch, AppImage suffix).
 TARGET        ?=
 
+HOST_DEB_ARCH := $(shell dpkg --print-architecture 2>/dev/null || echo amd64)
+HOST_MULTIARCH := $(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2>/dev/null || echo x86_64-linux-gnu)
+
 ifeq ($(TARGET),)
     NATIVE_BUILD := 1
     CARGO_TARGET_DIR_SUFFIX :=
-    LIBDIR        := lib/x86_64-linux-gnu
-    DEB_ARCH      := amd64
-    APPIMG_ARCH   := x86_64
+    LIBDIR        := lib/$(HOST_MULTIARCH)
+    DEB_ARCH      := $(HOST_DEB_ARCH)
+    APPIMG_ARCH   := $(if $(filter arm64,$(HOST_DEB_ARCH)),aarch64,x86_64)
     CROSS         := $(CARGO)
 else
     NATIVE_BUILD :=
@@ -34,12 +37,14 @@ STATIME_BIN   := vendor/statime/target$(CARGO_TARGET_DIR_SUFFIX)/release/statime
 INFERNO2PIPE  := $(ENGINE_DIR)/target$(CARGO_TARGET_DIR_SUFFIX)/release/sonusgrid_pipe
 
 DEB_NAME      := sonusgrid_$(SONUS_VERSION)-$(DEB_REVISION)_$(DEB_ARCH).deb
+RUN_NAME      := SonusGrid-$(SONUS_VERSION)-$(DEB_ARCH).run
 APPIMG_NAME   := SonusGrid-$(APPIMG_ARCH).AppImage
 
 # Helper: pass --target to the cargo invocation only when TARGET is set.
 CARGO_TARGET_FLAG := $(if $(TARGET),--target=$(TARGET),)
 
 .PHONY: help build build-vendor build-cli build-gui test deb deb-arm64 \
+        run-installer checksums release check-version bump \
         appimage appimage-arm64 docs docs-html install uninstall clean \
         distclean version build-all-arch macos-cross-check macos-cli-universal \
         macos-statime-universal macos-inferno-c-universal
@@ -49,8 +54,10 @@ help:
 	@echo
 	@echo "Native targets (host = $(shell uname -m)):"
 	@echo "  make build         — build everything for the host"
-	@echo "  make deb           — build $(DEB_NAME)"
-	@echo "  make appimage      — build $(APPIMG_NAME)"
+	@echo "  make deb           — build dist/$(DEB_NAME)"
+	@echo "  make run-installer — build dist/$(RUN_NAME) (end-user self-extracting installer)"
+	@echo "  make release       — deb + run-installer + dist/SHA256SUMS"
+	@echo "  make appimage      — build $(APPIMG_NAME) (experimental)"
 	@echo
 	@echo "Cross-compile (needs Docker + cross-rs):"
 	@echo "  make deb-arm64        — build sonusgrid_$(SONUS_VERSION)-$(DEB_REVISION)_arm64.deb"
@@ -66,6 +73,8 @@ help:
 	@echo "  make build-cli     — build the sonus CLI"
 	@echo "  make build-gui     — byte-compile the GTK GUI"
 	@echo "  make test          — unit + smoke tests"
+	@echo "  make bump VERSION=x.y.z — bump every version string + changelog stanza"
+	@echo "  make check-version TAG=vx.y.z — verify all version strings match the tag"
 	@echo "  make docs-html     — render docs to HTML"
 	@echo "  make install       — install into PREFIX (default /usr)"
 	@echo "  make uninstall     — undo install"
@@ -93,6 +102,8 @@ $(BRIDGE_BIN): $(wildcard crates/sonusgrid-bridge/src/*.rs) crates/sonusgrid-bri
 	cd crates/sonusgrid-bridge && $(CROSS) build --release $(CARGO_TARGET_FLAG)
 
 build-gui:
+	printf '__version__ = "%s"\n' $(SONUS_VERSION) > gui/sonus-gtk/sonus_gtk/_version.py
+	find gui/sonus-gtk/sonus_gtk -name __pycache__ -type d -prune -exec rm -rf {} +
 	$(PYTHON) -m compileall -q gui/sonus-gtk/sonus_gtk
 
 test:
@@ -104,10 +115,6 @@ deb: build
 	@rm -rf build/debian
 	@mkdir -p build
 	cp -r packaging/debian build/debian
-	# Override Architecture in control if cross-building
-	@if [ "$(DEB_ARCH)" != "amd64" ]; then \
-	    sed -i 's/^Architecture: amd64$$/Architecture: $(DEB_ARCH)/' build/debian/control; \
-	fi
 	cd build && \
 	    SONUS_SOURCE_DIR=$(CURDIR) \
 	    SONUS_TARGET=$(TARGET) \
@@ -121,6 +128,22 @@ deb: build
 
 deb-arm64:
 	$(MAKE) deb TARGET=aarch64-unknown-linux-gnu
+
+# --- end-user installer + release bundle -----------------------------------
+run-installer: deb
+	bash packaging/makeself/build-run.sh $(SONUS_VERSION) $(DEB_REVISION) $(DEB_ARCH) dist/$(DEB_NAME) dist/$(RUN_NAME)
+
+checksums:
+	cd dist && sha256sum *.deb *.run > SHA256SUMS && cat SHA256SUMS
+
+release: run-installer checksums
+
+check-version:
+	bash scripts/check-version.sh $(TAG)
+
+bump:
+	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=x.y.z"; exit 1; }
+	bash scripts/bump-version.sh $(VERSION)
 
 appimage: build
 	bash packaging/appimage/build-appimage.sh $(SONUS_VERSION) $(APPIMG_ARCH)
@@ -169,6 +192,8 @@ install: build
 	install -Dm 0644 alsa/sonusgrid.conf.in $(DESTDIR)$(PREFIX)/share/sonusgrid/sonusgrid.conf.in
 	install -Dm 0644 gui/sonus-gtk/data/io.sonusgrid.SonusGrid.desktop $(DESTDIR)$(PREFIX)/share/applications/io.sonusgrid.SonusGrid.desktop
 	install -Dm 0644 gui/sonus-gtk/data/icons/hicolor/scalable/apps/io.sonusgrid.SonusGrid.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/io.sonusgrid.SonusGrid.svg
+	install -Dm 0644 gui/sonus-gtk/data/icons/hicolor/symbolic/apps/io.sonusgrid.SonusGrid-symbolic.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/symbolic/apps/io.sonusgrid.SonusGrid-symbolic.svg
+	install -Dm 0644 gui/sonus-gtk/data/io.sonusgrid.SonusGrid.metainfo.xml $(DESTDIR)$(PREFIX)/share/metainfo/io.sonusgrid.SonusGrid.metainfo.xml
 	mkdir -p $(DESTDIR)$(PREFIX)/share/sonusgrid/gui
 	cp -r gui/sonus-gtk/sonus_gtk $(DESTDIR)$(PREFIX)/share/sonusgrid/gui/
 	install -Dm 0644 docs/USER_GUIDE.md $(DESTDIR)$(PREFIX)/share/doc/sonusgrid/USER_GUIDE.md
@@ -196,6 +221,8 @@ uninstall:
 	rm -rf $(DESTDIR)$(PREFIX)/share/doc/sonusgrid
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/io.sonusgrid.SonusGrid.desktop
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/io.sonusgrid.SonusGrid.svg
+	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/symbolic/apps/io.sonusgrid.SonusGrid-symbolic.svg
+	rm -f $(DESTDIR)$(PREFIX)/share/metainfo/io.sonusgrid.SonusGrid.metainfo.xml
 
 clean:
 	cd crates/sonus-cli && $(CARGO) clean

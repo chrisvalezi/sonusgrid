@@ -1,3 +1,19 @@
+sonusgrid (0.3.0-1) unstable; urgency=medium
+
+  * New app icon (node mesh + audio wave) with symbolic variant and
+    AppStream metainfo.
+  * GUI redesigned on GTK4/libadwaita 1.5: sidebar navigation, adaptive
+    layout, live PTP lock indicator, Dante device discovery, diagnostics
+    checklist and in-app log viewer; async CLI calls; no deprecated API.
+  * CLI: status --json gains "ptp" (Statime observation socket);
+    devices --json (native mDNS, no Avahi); doctor --json; 44.1/88.2 kHz.
+  * End-user .run installer (makeself) and release one-liner; CI/Release
+    workflows; native arm64 packaging (Architecture: any).
+  * Depends on pipewire-jack and a PipeWire session manager; recommends
+    qpwgraph; engine logs at info level.
+
+ -- Chris Valezi <chrisvalezi@gmail.com>  Sat, 19 Sep 2026 01:44:36 -0300
+
 sonusgrid (0.2.1-1) unstable; urgency=medium
 
   * Start-up reliability overhaul ("SonusGrid never starts" bugs):

@@ -1,0 +1,6 @@
+/* Dark-only overrides (loaded/unloaded on StyleManager:dark). Named colours
+ * already switch automatically, so this stays tiny. */
+.sg-orb.running, .sg-orb.degraded { background: alpha(@success_color, 0.22); }
+.sg-chip.ok   { background: alpha(@success_color, 0.22); }
+.sg-chip.warn { background: alpha(@warning_color, 0.24); }
+.sg-chip.err  { background: alpha(@error_color,   0.22); }

@@ -1,6 +1,6 @@
 [package]
 name = "sonusgrid-bridge"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 description = "Native Rust full-duplex bridge between PipeWire/Pulse and the SonusGrid ALSA plug-in. Replaces the multi-input ffmpeg pipeline that introduced 20+ s of latency."

@@ -11,32 +11,53 @@
 
 ## Software prerequisites
 
-- PipeWire ≥ 0.3.65 with `pipewire-pulse` and `pipewire-jack`.
-- systemd (the services are user units).
-- Python 3.10+, GTK 4, libadwaita (GUI) — pulled in automatically.
+- **Ubuntu 24.04+, Debian 12+ (13 for the GUI), Linux Mint 22+, Fedora 40+, Arch.**
+  Ubuntu 22.04 is **not** supported (PipeWire 0.3.48 < 0.3.65).
+- PipeWire with `pipewire-pulse`, `pipewire-jack`, WirePlumber; systemd user session.
+- GUI: Python 3.11+, GTK 4.12+, libadwaita 1.5+ (pulled in automatically).
 
-## Path A — `install.sh` (recommended)
+## Path A — one command (Debian / Ubuntu / Mint) — recommended
 
 ```bash
-git clone https://github.com/chrisvalezi/sonusgrid.git
-cd sonusgrid
-./install.sh
+curl -fsSL https://github.com/chrisvalezi/sonusgrid/releases/latest/download/install.sh | bash
 ```
 
-Run it as your normal user (it calls `sudo` only where needed). It detects the distro,
-installs dependencies, builds/installs the `.deb` on Debian-family systems (or `make
-install`s from source elsewhere and performs the same system setup: `setcap` on Statime,
-udev rule for `/dev/ptp*`, `ld.so.conf.d` drop-in so `libjack` resolves to PipeWire-JACK),
-adds you to the `audio` group and runs `sonusgrid doctor`.
+Downloads `SHA256SUMS` and the `.run` installer for your architecture from the latest
+release, verifies it and runs it. Options are forwarded: `… | bash -s -- --no-launch`,
+`… | bash -s -- --uninstall`. Pin a version with `SONUSGRID_VERSION=v0.3.0`.
 
-Options: `--build`, `--deb FILE.deb`, `--no-start`.
+## Path B — the `.run` installer
 
-## Path B — prebuilt `.deb`
+Download `SonusGrid-<version>-amd64.run` (or `-arm64.run`) from
+[Releases](https://github.com/chrisvalezi/sonusgrid/releases), then:
 
 ```bash
-sudo apt install ./sonusgrid_0.2.1-1_amd64.deb     # or _arm64.deb
-sudo usermod -aG audio $USER                       # then log out/in
+chmod +x SonusGrid-*.run && ./SonusGrid-*.run
+```
+
+Run it as your normal user. It checks distro/arch, asks for your password **once**, installs
+the `.deb` plus `pipewire-jack`, `wireplumber`, `pavucontrol` via `apt` (the package's postinst
+does `setcap`, the udev rule and the PipeWire-JACK `ld.so.conf.d` drop-in), adds you to the
+`audio` group (log out/in afterwards), creates the config, runs `sonusgrid doctor` and offers
+to open the GUI. Options: `-- --yes --no-launch`, `-- --deb-only`, `-- --uninstall [--purge]`;
+`--check` verifies the embedded checksum.
+
+Double-click works in Nemo, Dolphin and Thunar; **GNOME Files ≥ 43 does not execute scripts** —
+use a terminal or Path A. Verify downloads with `sha256sum -c --ignore-missing SHA256SUMS`.
+
+## Path C — plain `.deb`
+
+```bash
+sudo apt install ./sonusgrid_<version>-1_amd64.deb pipewire-jack
+sudo usermod -aG audio $USER        # then log out/in
 sonusgrid doctor
+```
+
+## Path D — repository `install.sh` (Fedora / Arch / openSUSE / development)
+
+```bash
+git clone https://github.com/chrisvalezi/sonusgrid.git && cd sonusgrid
+./install.sh
 ```
 
 ## First configuration
@@ -61,8 +82,9 @@ user session; they come up on login from then on.
 ## Uninstall
 
 ```bash
-./uninstall.sh            # keeps ~/.config/sonusgrid
-./uninstall.sh --purge
+./SonusGrid-*.run -- --uninstall [--purge]   # or: curl … | bash -s -- --uninstall
+sudo apt remove sonusgrid
+./uninstall.sh [--purge]                     # from the repository
 ```
 
 ## Build from source
@@ -72,7 +94,9 @@ sudo apt install build-essential pkg-config libasound2-dev libpulse-dev \
      libjack-jackd2-dev python3 devscripts debhelper
 make build        # statime + engine + cli + bridge + gui
 make test
-make deb          # dist/sonusgrid_<v>-1_amd64.deb
+make deb          # dist/sonusgrid_<v>-1_<arch>.deb
+make run-installer # dist/SonusGrid-<v>-<arch>.run
+make release      # deb + run + SHA256SUMS
 sudo make install # alternative to the .deb (then do the system setup by hand, see PT docs)
 make deb-arm64    # cross-compile (Docker + cross)
 make appimage     # experimental

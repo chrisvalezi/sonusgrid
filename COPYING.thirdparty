@@ -28,3 +28,9 @@ contaminate SonusGrid.
 Trademark notice: "Dante" is a trademark of Audinate Pty Ltd. Sonus is not
 affiliated with, endorsed by, or sponsored by Audinate. The trademark is
 referenced solely to describe interoperability.
+
+## makeself (packaging/makeself/makeself.sh, makeself-header.sh)
+
+Copyright (c) Stéphane Peter and contributors — GPL-2.0-or-later.
+Used only at build time to produce the self-extracting `.run` installer; the
+generated installer embeds `makeself-header.sh`. See packaging/makeself/LICENSE.

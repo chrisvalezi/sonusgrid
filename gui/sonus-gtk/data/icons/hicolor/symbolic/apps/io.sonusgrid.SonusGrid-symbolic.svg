@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Symbolic variant: filled geometry only (GTK recolours by forcing fill). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <g fill="#2e3436">
+    <!-- vertical link -->
+    <rect x="7.25" y="3" width="1.5" height="10" rx="0.75"/>
+    <!-- wave ribbon, ~1.5 px thick, amplitude 2.5 -->
+    <path d="M3 7.25 C4.6 7.25 4.6 4.75 5.75 4.75 C7.4 4.75 7.6 11.25 9.25 11.25 C10.4 11.25 10.4 7.25 13 7.25
+             L13 8.75 C10.4 8.75 10.4 12.75 9.25 12.75 C7.6 12.75 7.4 6.25 5.75 6.25 C4.6 6.25 4.6 8.75 3 8.75 Z"/>
+    <!-- nodes -->
+    <circle cx="2"  cy="8"  r="1.6"/>
+    <circle cx="14" cy="8"  r="1.6"/>
+    <circle cx="8"  cy="2"  r="1.6"/>
+    <circle cx="8"  cy="14" r="1.6"/>
+    <!-- hub -->
+    <circle cx="8" cy="8" r="2.4"/>
+  </g>
+</svg>

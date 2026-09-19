@@ -30,17 +30,19 @@ pub fn validate(cfg: &Config) -> Vec<Problem> {
             en: format!("invalid ptp.version: '{}' (use \"v1\" or \"v2\")", cfg.ptp.version),
         });
     }
-    if cfg.device.sample_rate != 48_000 && cfg.device.sample_rate != 96_000 {
+    if !matches!(cfg.device.sample_rate, 44_100 | 48_000 | 88_200 | 96_000) {
         v.push(Problem {
-            pt: format!("device.sample_rate = {} não é suportado (use 48000 ou 96000)", cfg.device.sample_rate),
-            en: format!("device.sample_rate = {} is not supported (use 48000 or 96000)", cfg.device.sample_rate),
+            pt: format!("device.sample_rate = {} não é suportado (use 44100, 48000, 88200 ou 96000)", cfg.device.sample_rate),
+            en: format!("device.sample_rate = {} is not supported (use 44100, 48000, 88200 or 96000)", cfg.device.sample_rate),
         });
     }
     v
 }
 
-pub fn run(cfg_path: &Path, _lang: crate::text::Lang) -> Result<()> {
-    println!("=== sonusgrid doctor ===\n");
+pub fn run(cfg_path: &Path, _lang: crate::text::Lang, json_out: bool) -> Result<()> {
+    if !json_out {
+        println!("=== sonusgrid doctor ===\n");
+    }
 
     let cfg = config::load(cfg_path)?;
     let mut problems: Vec<Problem> = Vec::new();
@@ -340,6 +342,18 @@ pub fn run(cfg_path: &Path, _lang: crate::text::Lang) -> Result<()> {
     }
 
     // --- print report ----------------------------------------------------
+    if json_out {
+        let val = serde_json::json!({
+            "ok": problems.is_empty(),
+            "passed": greens.iter().map(|g| g.trim_start_matches("✓ ").to_string()).collect::<Vec<_>>(),
+            "problems": problems.iter().map(|p| serde_json::json!({"pt": p.pt, "en": p.en})).collect::<Vec<_>>(),
+        });
+        println!("{}", serde_json::to_string_pretty(&val)?);
+        if problems.is_empty() {
+            return Ok(());
+        }
+        std::process::exit(1);
+    }
     for g in &greens {
         println!("  {g}");
     }

@@ -11,6 +11,8 @@ mod audio;
 mod config;
 mod doctor;
 mod logs;
+#[cfg(target_os = "linux")]
+mod mdns;
 mod paths;
 #[cfg(target_os = "linux")]
 mod ptp;
@@ -82,10 +84,18 @@ enum Cmd {
     },
     /// Open pavucontrol focused on the SonusGrid sink.
     Route,
-    /// List Dante channels currently visible on the network.
-    Devices,
-    /// Run end-to-end diagnostics (NTP, PTP, ALSA, PipeWire).
-    Doctor,
+    /// List Dante devices currently visible on the network (mDNS).
+    Devices {
+        /// Emit machine-readable JSON.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Run end-to-end diagnostics (PTP, ALSA, PipeWire, systemd).
+    Doctor {
+        /// Emit machine-readable JSON instead of the bilingual report.
+        #[arg(long)]
+        json: bool,
+    },
     /// Print version and disclaimer.
     Version,
 
@@ -140,8 +150,8 @@ fn main() -> Result<()> {
         },
         Cmd::Logs { unit, follow } => logs::follow(&unit, follow),
         Cmd::Route => routing::open_pavucontrol(&cfg_path, lang),
-        Cmd::Devices => routing::list_devices(&cfg_path, lang),
-        Cmd::Doctor => doctor::run(&cfg_path, lang),
+        Cmd::Devices { json } => routing::list_devices(&cfg_path, lang, json),
+        Cmd::Doctor { json } => doctor::run(&cfg_path, lang, json),
         Cmd::Version => {
             println!("sonusgrid {VERSION}");
             println!("{DISCLAIMER}");

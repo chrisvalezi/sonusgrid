@@ -14,22 +14,24 @@ Homepage: https://github.com/chrisvalezi/sonusgrid
 Rules-Requires-Root: binary-targets
 
 Package: sonusgrid
-Architecture: amd64
+Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  libasound2 | libasound2t64,
  alsa-utils,
  pipewire (>= 0.3.65),
  pipewire-pulse,
+ pipewire-jack,
+ wireplumber | pipewire-session-manager,
  pulseaudio-utils,
  libpulse0,
- python3 (>= 3.10),
- python3-gi,
- gir1.2-gtk-4.0,
- gir1.2-adw-1,
+ python3 (>= 3.11),
+ python3-gi (>= 3.46),
+ gir1.2-gtk-4.0 (>= 4.12),
+ gir1.2-adw-1 (>= 1.5),
  libcap2-bin,
  systemd
 Recommends: pavucontrol,
- avahi-utils
+ qpwgraph
 Suggests: linux-lowlatency,
  wireshark
 Description: Linux audio app compatible with Dante audio networks

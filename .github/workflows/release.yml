@@ -1,0 +1,85 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag: { description: "Existing tag to (re)build, e.g. v0.3.0", required: true }
+
+permissions:
+  contents: write
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  check-version:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ env.TAG }}" }
+      - run: make check-version TAG="$TAG"
+
+  build:
+    needs: check-version
+    strategy:
+      matrix:
+        include:
+          - { arch: amd64, runner: ubuntu-24.04 }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
+    runs-on: ${{ matrix.runner }}
+    container: debian:bookworm
+    steps:
+      - name: Build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git ca-certificates curl build-essential pkg-config \
+            devscripts debhelper dpkg-dev fakeroot libasound2-dev libpulse-dev libjack-jackd2-dev python3
+      - uses: actions/checkout@v4
+        with: { ref: "${{ env.TAG }}" }
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            crates/sonus-cli
+            crates/sonusgrid-bridge
+            crates/sonusgrid-engine
+            vendor/statime
+      - run: make run-installer
+      - run: ls -la dist && test -f dist/sonusgrid_*_${{ matrix.arch }}.deb && test -f dist/SonusGrid-*-${{ matrix.arch }}.run
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.arch }}
+          path: |
+            dist/*.deb
+            dist/*.run
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ env.TAG }}" }
+      - uses: actions/download-artifact@v4
+        with: { pattern: "dist-*", merge-multiple: true, path: dist }
+      - name: Checksums + bootstrap + notes
+        run: |
+          cp packaging/bootstrap/install.sh dist/install.sh
+          (cd dist && sha256sum *.deb *.run > SHA256SUMS && cat SHA256SUMS)
+          bash scripts/changelog-section.sh "${TAG#v}" > release-notes.md || true
+          [ -s release-notes.md ] || echo "SonusGrid $TAG" > release-notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: SonusGrid ${{ env.TAG }}
+          body_path: release-notes.md
+          prerelease: ${{ contains(env.TAG, '-') }}
+          fail_on_unmatched_files: true
+          files: |
+            dist/*.deb
+            dist/*.run
+            dist/install.sh
+            dist/SHA256SUMS

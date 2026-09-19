@@ -38,7 +38,7 @@ Ele reúne, num único pacote:
 | **SonusGrid Engine** (Rust, fork do [Inferno](https://github.com/teodly/inferno)) | plug-in ALSA que fala o protocolo Dante (ARC/CMC/DBC, RTP, mDNS) |
 | **sonusgrid-bridge** (Rust) | ponte full-duplex PipeWire ↔ JACK ↔ ALSA em um só processo |
 | **sonusgrid** (Rust) | CLI: `start`, `stop`, `status`, `doctor`, `logs`, `config` |
-| **GUI** (GTK4 / libadwaita) | status, roteamento, configuração, ferramentas |
+| **GUI** (GTK4 / libadwaita) | estado com lock PTP ao vivo, dispositivos Dante na rede, configuração, diagnóstico e logs |
 
 <!-- SCREENSHOT: tela principal (Status) da GUI -->
 <p align="center">
@@ -47,7 +47,9 @@ Ele reúne, num único pacote:
 
 ## Requisitos
 
-- **Linux x86-64 ou ARM64** com **PipeWire ≥ 0.3.65** (Ubuntu 22.04+, Debian 12+, Mint 21+, Fedora 36+, Arch).
+- **Linux x86-64 ou ARM64** com **PipeWire ≥ 0.3.65**, GTK 4.12+ e libadwaita 1.5+:
+  Ubuntu 24.04+, Debian 12+ (13 para a GUI), Linux Mint 22+, Fedora 40+, Arch.
+  *Ubuntu 22.04 não é suportado (PipeWire 0.3.48).*
 - **Placa de rede Ethernet dedicada** ligada ao switch dos equipamentos Dante.
   **Wi-Fi não funciona** — Dante exige jitter < 1 ms.
 - Um PC Windows/macOS com **Dante Controller** na mesma rede para rotear canais
@@ -56,36 +58,48 @@ Ele reúne, num único pacote:
 
 ## Instalação
 
-### Ubuntu / Debian / Mint (pacote `.deb`)
+### 1. Um comando (Ubuntu / Debian / Mint) — recomendado
 
 ```bash
-git clone https://github.com/chrisvalezi/sonusgrid.git
-cd sonusgrid
-./install.sh
+curl -fsSL https://github.com/chrisvalezi/sonusgrid/releases/latest/download/install.sh | bash
 ```
 
-O `install.sh` instala as dependências, usa o `.deb` pronto em `dist/` (ou compila um se não
-houver), instala com `apt`, adiciona você ao grupo `audio` e roda o `sonusgrid doctor`.
-Já tem um `.deb` baixado da página de *Releases*? Então basta:
+Baixa o instalador da última *release* para a sua arquitetura (amd64/arm64), confere o
+SHA-256, instala o pacote e as dependências com `apt`, coloca você no grupo `audio` e
+oferece abrir a GUI. Opções: `… | bash -s -- --no-launch`, `… | bash -s -- --uninstall`.
+
+### 2. Instalador `.run` (duplo clique ou terminal)
+
+Baixe `SonusGrid-<versão>-amd64.run` (ou `-arm64.run`) na página de
+[Releases](https://github.com/chrisvalezi/sonusgrid/releases) e:
 
 ```bash
-sudo apt install ./sonusgrid_0.2.1-1_amd64.deb
+chmod +x SonusGrid-*.run && ./SonusGrid-*.run
 ```
 
-### Fedora / Arch / openSUSE (a partir do fonte)
+(O navegador remove a permissão de execução: `chmod +x` ou *Propriedades → Permitir executar*.
+Duplo clique funciona no Nemo, Dolphin e Thunar; o GNOME Files não executa scripts — use o terminal.)
+Para remover: `./SonusGrid-*.run -- --uninstall`.
+
+### 3. Pacote `.deb` direto
 
 ```bash
-./install.sh            # detecta a distro, instala deps, compila e instala em /usr
+sudo apt install ./sonusgrid_<versão>-1_amd64.deb
+sudo usermod -aG audio $USER        # depois faça logout/login
+```
+
+### 4. A partir do fonte (Fedora / Arch / openSUSE / desenvolvimento)
+
+```bash
+git clone https://github.com/chrisvalezi/sonusgrid.git && cd sonusgrid
+./install.sh            # detecta a distro, instala deps, compila e instala
 ```
 
 ### Desinstalar
 
-```bash
-./uninstall.sh          # mantém ~/.config/sonusgrid
-./uninstall.sh --purge  # remove tudo
-```
+`./SonusGrid-*.run -- --uninstall`, `sudo apt remove sonusgrid`, ou `./uninstall.sh [--purge]` no repo.
 
-Detalhes (dependências, build manual, cross-compile ARM64, AppImage): [docs/INSTALL.md](docs/INSTALL.md).
+Detalhes, verificação de downloads, cross-compile ARM64: [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Uso rápido
 
@@ -172,21 +186,32 @@ crates/inferno-c/         binding C do engine (usado pelo plug-in HAL do macOS)
 vendor/statime/           daemon PTP (fork do Statime com exportação de relógio virtual)
 gui/sonus-gtk/            GUI GTK4/libadwaita (Python)
 systemd/                  units de usuário + drop-in do PipeWire
-packaging/                debian/, udev, AppImage
+packaging/debian/         pacote .deb (postinst faz setcap, udev, ld.so)
+packaging/makeself/       instalador .run para usuário final (makeself vendorado)
+packaging/bootstrap/      install.sh publicado na release (one-liner)
+packaging/udev|appimage/  regra udev; AppImage (experimental)
+.github/workflows/        CI (build + teste de instalação) e Release (deb+run amd64/arm64)
+scripts/                  bump-version, check-version, changelog-section
 macos/                    porte macOS (HAL plug-in + launchd) — experimental
 docs/                     documentação PT-BR (+ docs/en/)
-install.sh / uninstall.sh instalador de um comando
-Makefile                  build, deb, appimage, install
+install.sh / uninstall.sh instalador de desenvolvedor (a partir do repo)
+Makefile                  build, deb, run-installer, release, install
 ```
 
 ## Desenvolvimento
 
 ```bash
-make build      # statime + engine + cli + bridge + gui   (~5 min na primeira vez)
-make test       # testes unitários + smoke test do CLI
-make deb        # gera dist/sonusgrid_<versão>_amd64.deb
-make install    # instala em /usr (PREFIX=... para mudar)
+make build            # statime + engine + cli + bridge + gui   (~5 min na primeira vez)
+make test             # testes unitários + smoke test do CLI
+make deb              # dist/sonusgrid_<versão>-1_<arch>.deb
+make run-installer    # dist/SonusGrid-<versão>-<arch>.run
+make release          # deb + run + dist/SHA256SUMS
+make install          # instala em /usr (PREFIX=... para mudar)
+make bump VERSION=x.y.z   # atualiza todas as versões + changelog; depois: commit, tag vX.Y.Z, push
 ```
+
+Um `git push` de tag `v*` dispara o workflow de release: compila `.deb` + `.run` para amd64 e
+arm64 em `debian:bookworm`, gera `SHA256SUMS` e publica tudo na página de Releases.
 
 Precisa de: Rust ≥ 1.75, `pkg-config`, `libasound2-dev`, `libpulse-dev`, `libjack-jackd2-dev`,
 `devscripts debhelper` (para o `.deb`). O `install.sh --build` instala tudo isso.
@@ -211,6 +236,11 @@ git clone https://github.com/chrisvalezi/sonusgrid.git && cd sonusgrid
 sonusgrid config edit              # set [network].interface to the NIC on the Dante switch
 sonusgrid start                    # or use the GUI
 sonusgrid doctor                   # bilingual diagnostics
+```
+
+```bash
+# or the one-liner (Debian/Ubuntu/Mint):
+curl -fsSL https://github.com/chrisvalezi/sonusgrid/releases/latest/download/install.sh | bash
 ```
 
 English docs: [Install](docs/en/INSTALL.md) · [User guide](docs/en/USER_GUIDE.md) ·

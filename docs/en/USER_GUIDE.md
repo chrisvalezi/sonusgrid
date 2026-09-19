@@ -71,10 +71,12 @@ sonusgrid devices    # list Dante devices visible via mDNS
 
 ### Send Linux audio to SonusGrid
 
-**Via the GUI** (recommended): open SonusGrid → **Routing** tab. The page
-shows apps playing into SonusGrid plus active JACK connections. Use the
-**Move** button to change an app's destination. For custom wiring, click
-**Advanced router (qpwgraph)**.
+**Via the GUI**: open SonusGrid → **Dante network** page. It lists the Dante
+devices discovered on the LAN, the PipeWire session's JACK buffer, and
+launchers for the **per-app mixer (pavucontrol)** — where you pick SonusGrid
+as each app's output — and the **visual patchbay (qpwgraph)** for manual
+JACK/PipeWire wiring. The **Diagnostics** page shows `doctor` as a checklist
+and follows the logs live.
 
 **Via pavucontrol**:
 

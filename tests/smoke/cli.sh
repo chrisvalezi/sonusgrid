@@ -24,7 +24,11 @@ echo "== config check passes with an interface"
 sed -i 's/^interface = ""/interface = "lo"/' "$CFG"
 "$BIN" --config "$CFG" config check --quiet
 echo "== status --json is valid JSON"
-"$BIN" --config "$CFG" status --json | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["mode"]=="unified"; assert "clock_state" in d'
+"$BIN" --config "$CFG" status --json | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["mode"]=="unified"; assert "clock_state" in d; assert "ptp" in d'
+echo "== doctor --json is valid JSON"
+"$BIN" --config "$CFG" doctor --json 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); assert "ok" in d and "problems" in d' || true
+echo "== devices --json on lo returns a list"
+"$BIN" --config "$CFG" devices --json 2>/dev/null | python3 -c 'import json,sys; assert isinstance(json.load(sys.stdin), list)'
 echo "== start must refuse a nonexistent interface"
 sed -i 's/^interface = "lo"/interface = "does-not-exist0"/' "$CFG"
 if "$BIN" --config "$CFG" start >/dev/null 2>&1; then

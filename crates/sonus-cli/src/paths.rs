@@ -55,6 +55,11 @@ pub fn clock_socket_path() -> PathBuf {
     runtime_dir().join("ptp-usrvclock")
 }
 
+/// Unix socket where Statime answers "what's your PTP state?" (JSON).
+pub fn observe_socket_path() -> PathBuf {
+    runtime_dir().join("statime-observe.sock")
+}
+
 /// FIFO the bridge writes RX audio into; `module-pipe-source` reads it.
 pub fn rx_fifo_path(cfg: &Config) -> PathBuf {
     runtime_dir().join(format!("{}_RX.fifo", cfg.bridge.sink_name))

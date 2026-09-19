@@ -3,6 +3,40 @@
 All notable changes to SonusGrid are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] — 2026-09-20
+
+### Added
+- **New icon** — a mesh of connected nodes whose horizontal link is an audio
+  wave; flat GNOME style, with a symbolic variant and AppStream metainfo.
+- **Redesigned GUI** (GTK4 / libadwaita ≥ 1.5): sidebar navigation that
+  collapses on narrow windows, light/dark from the system, a status page with
+  a live **PTP lock indicator** (port state, offset to master, grandmaster),
+  service chips, redesigned throughput meter, a **Dante network** page that
+  lists devices discovered on the LAN, a configuration page with an
+  apply/discard bar and external-change reload, and a **diagnostics** page
+  with `doctor` rendered as a checklist plus an in-app log viewer. All CLI
+  calls are asynchronous; no deprecated libadwaita API.
+- `sonusgrid status --json` now reports `ptp` (state, locked, offset,
+  delay, grandmaster) read from Statime's observation socket.
+- `sonusgrid devices [--json]` — native mDNS discovery of Dante devices on
+  the configured NIC (no Avahi needed). `sonusgrid doctor --json`.
+- **End-user installer** `SonusGrid-<ver>-<arch>.run` (makeself) and the
+  one-liner `curl -fsSL …/releases/latest/download/install.sh | bash`.
+- GitHub Actions: CI (build + install test on Debian 12 / Ubuntu 24.04) and
+  Release (deb + run for amd64 and arm64, checksums, notes from this file).
+- `make bump VERSION=…`, `make check-version`, `make release`.
+
+### Changed
+- `config check` accepts 44.1 / 48 / 88.2 / 96 kHz.
+- Engine log level defaults to `info` in the audio unit (was `debug`).
+- Debian package: `Architecture: any`, native arm64 builds, depends on
+  `pipewire-jack` and a session manager, recommends `qpwgraph`; minimum
+  libadwaita 1.5 / GTK 4.12 / Python 3.11.
+
+### Removed
+- `config_dialog.py` (duplicate configuration UI) and the `avahi-utils`
+  recommendation.
+
 ## [0.2.1] — 2026-09-19
 
 ### Fixed

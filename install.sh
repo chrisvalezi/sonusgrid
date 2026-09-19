@@ -107,8 +107,8 @@ apt_install() {
 install_build_deps_deb() {
     apt_install build-essential pkg-config devscripts debhelper dpkg-dev \
         libasound2-dev libpulse-dev libjack-jackd2-dev python3 \
-        pipewire pipewire-pulse pipewire-jack pulseaudio-utils alsa-utils \
-        python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 libcap2-bin
+        pipewire pipewire-pulse pipewire-jack wireplumber pulseaudio-utils alsa-utils \
+        python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 libcap2-bin pavucontrol qpwgraph
 }
 
 install_deps_other() {
@@ -129,7 +129,7 @@ install_deps_other() {
                 python3-gobject gtk4 libadwaita pipewire pipewire-pulseaudio pipewire-jack alsa-utils libcap-progs ;;
         *)
             warn "Unknown distro '$DISTRO_ID' — make sure you have: gcc, pkg-config, ALSA/libpulse/JACK dev headers,"
-            warn "python3-gobject, GTK4, libadwaita, PipeWire (+pulse +jack), pactl, setcap." ;;
+            warn "python3-gobject >= 3.46, GTK4 >= 4.12, libadwaita >= 1.5, PipeWire (+pulse +jack +wireplumber), pactl, setcap." ;;
     esac
 }
 

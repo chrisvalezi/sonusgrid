@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.sonusgrid.SonusGrid</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>SonusGrid</name>
+  <summary>Dante-compatible audio endpoint for Linux</summary>
+  <summary xml:lang="pt_BR">Dispositivo de áudio compatível com redes Dante para Linux</summary>
+  <description>
+    <p>SonusGrid turns a Linux computer into an audio endpoint that interoperates with Dante audio networks: a PTP clock daemon, an ALSA plug-in speaking the Dante protocol, and a native PipeWire/JACK bridge. Any application can play to and record from the Dante network; DAWs get a multichannel JACK client.</p>
+    <p xml:lang="pt_BR">O SonusGrid transforma um computador Linux em um dispositivo de áudio compatível com redes Dante: daemon PTP, plug-in ALSA que fala o protocolo Dante e ponte nativa PipeWire/JACK. Qualquer aplicativo pode tocar e gravar da rede Dante; DAWs enxergam um cliente JACK multicanal.</p>
+    <p>Compatible with Dante audio networks; not affiliated with Audinate Pty Ltd.</p>
+  </description>
+  <launchable type="desktop-id">io.sonusgrid.SonusGrid.desktop</launchable>
+  <url type="homepage">https://github.com/chrisvalezi/sonusgrid</url>
+  <url type="bugtracker">https://github.com/chrisvalezi/sonusgrid/issues</url>
+  <developer id="io.sonusgrid"><name>Chris Valezi</name></developer>
+  <content_rating type="oars-1.1"/>
+  <categories><category>AudioVideo</category><category>Audio</category></categories>
+  <keywords><keyword>dante</keyword><keyword>aoip</keyword><keyword>ptp</keyword><keyword>jack</keyword><keyword>pipewire</keyword></keywords>
+  <screenshots>
+    <screenshot type="default"><image>https://raw.githubusercontent.com/chrisvalezi/sonusgrid/main/docs/images/status.png</image><caption>Status</caption></screenshot>
+    <screenshot><image>https://raw.githubusercontent.com/chrisvalezi/sonusgrid/main/docs/images/config.png</image><caption>Configuration</caption></screenshot>
+  </screenshots>
+  <releases>
+    <release version="0.3.0" date="2026-09-20"><description><p>New icon, redesigned GTK4/libadwaita interface, native Dante device discovery, PTP lock indicator, end-user .run installer.</p></description></release>
+    <release version="0.2.1" date="2026-09-19"><description><p>Start-up reliability overhaul.</p></description></release>
+  </releases>
+</component>

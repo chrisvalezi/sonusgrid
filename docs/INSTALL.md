@@ -10,47 +10,77 @@
 
 ## Pré-requisitos de software
 
-- PipeWire ≥ 0.3.65 com `pipewire-pulse` e `pipewire-jack` (padrão em Ubuntu 22.10+,
-  Fedora 35+, Arch). Em distros mais antigas: `sudo apt install pipewire pipewire-pulse pipewire-jack`.
+- **Ubuntu 24.04+, Debian 12+ (13 para a GUI), Linux Mint 22+, Fedora 40+, Arch.**
+  Ubuntu 22.04 **não** serve: seu PipeWire (0.3.48) é anterior ao mínimo (0.3.65).
+- PipeWire com `pipewire-pulse`, `pipewire-jack` e WirePlumber (padrão nessas distros).
 - systemd (os serviços são *user units*).
-- Python 3.10+, GTK 4 e libadwaita para a GUI (instalados automaticamente).
+- GUI: Python 3.11+, GTK 4.12+, libadwaita 1.5+ (instalados automaticamente).
 
-## Caminho A — `install.sh` (recomendado)
+## Caminho A — um comando (Debian / Ubuntu / Mint) — recomendado
 
 ```bash
-git clone https://github.com/chrisvalezi/sonusgrid.git
-cd sonusgrid
-./install.sh
+curl -fsSL https://github.com/chrisvalezi/sonusgrid/releases/latest/download/install.sh | bash
 ```
 
-Rode como seu usuário normal (o script chama `sudo` só quando precisa). Ele:
+O script baixa `SHA256SUMS` e o instalador `.run` da última *release* para a sua arquitetura,
+confere o SHA-256 e o executa. Opções são repassadas: `… | bash -s -- --no-launch`,
+`… | bash -s -- --uninstall`. `SONUSGRID_VERSION=v0.3.0 curl … | bash` fixa uma versão.
 
-1. Detecta a distro e instala as dependências.
-2. **Debian/Ubuntu/Mint**: usa `dist/sonusgrid_<versão>_<arch>.deb` se existir; senão compila
-   um (`make deb`) e instala com `apt`. O *postinst* do pacote cuida de:
-   `setcap` no Statime, regra udev para `/dev/ptp*`, `ld.so.conf.d` apontando `libjack` para o
-   PipeWire-JACK, cache de ícones.
-   **Fedora/Arch/openSUSE**: compila (`make build`), instala em `/usr` e faz os mesmos passos
-   de sistema manualmente.
-3. Adiciona você ao grupo `audio` (necessário para o relógio PTP de hardware, `/dev/ptp0`).
-4. Cria `~/.config/sonusgrid/config.toml` e roda `sonusgrid doctor`.
+## Caminho B — instalador `.run`
 
-Opções: `--build` (força compilar), `--deb arquivo.deb`, `--no-start`.
-
-## Caminho B — `.deb` pronto
-
-Baixe o pacote da página de *Releases* e:
+Baixe `SonusGrid-<versão>-amd64.run` (ou `-arm64.run`) em
+[Releases](https://github.com/chrisvalezi/sonusgrid/releases).
 
 ```bash
-sudo apt install ./sonusgrid_0.2.1-1_amd64.deb      # ou _arm64.deb
-sudo usermod -aG audio $USER && newgrp audio        # ou faça logout/login
+chmod +x SonusGrid-*.run
+./SonusGrid-*.run
+```
+
+O instalador (rode como seu usuário, não com `sudo`):
+
+1. Confere distro e arquitetura.
+2. Pede a senha **uma vez** e instala o `.deb` + `pipewire-jack`, `wireplumber`, `pavucontrol`
+   com `apt` (o *postinst* do pacote faz `setcap` no Statime, regra udev para `/dev/ptp*`,
+   `ld.so.conf.d` para o PipeWire-JACK).
+3. Adiciona você ao grupo `audio` (faça logout/login depois — relógio PTP de hardware).
+4. Cria `~/.config/sonusgrid/config.toml`, roda `sonusgrid doctor` e oferece abrir a GUI.
+
+Opções: `./SonusGrid-*.run -- --yes --no-launch`, `-- --deb-only`, `-- --uninstall [--purge]`;
+`--check` verifica a integridade, `--noexec --target pasta` só extrai.
+
+Duplo clique: funciona no Nemo (Mint), Dolphin (KDE) e Thunar (Xfce) — eles abrem um terminal.
+O **GNOME Files (43+) não executa scripts**; no GNOME use o terminal ou o Caminho A.
+
+### Verificando o download
+
+```bash
+sha256sum -c --ignore-missing SHA256SUMS      # SHA256SUMS está na mesma página de Releases
+```
+
+## Caminho C — `.deb` direto
+
+```bash
+sudo apt install ./sonusgrid_<versão>-1_amd64.deb pipewire-jack
+sudo usermod -aG audio $USER                    # depois logout/login
 sonusgrid doctor
 ```
 
 | Arquivo | Plataformas |
 |---|---|
-| `sonusgrid_<v>_amd64.deb` | PCs Intel/AMD 64-bit |
-| `sonusgrid_<v>_arm64.deb` | Raspberry Pi 4/5 (OS 64-bit), Ubuntu Server arm64, ODROID… |
+| `sonusgrid_<v>-1_amd64.deb` | PCs Intel/AMD 64-bit |
+| `sonusgrid_<v>-1_arm64.deb` | Raspberry Pi 4/5 (OS 64-bit bookworm), Ubuntu arm64, ODROID… |
+
+## Caminho D — `install.sh` do repositório (Fedora / Arch / openSUSE / desenvolvimento)
+
+```bash
+git clone https://github.com/chrisvalezi/sonusgrid.git
+cd sonusgrid
+./install.sh            # detecta a distro, instala deps, compila (ou usa dist/*.deb) e instala
+```
+
+Em Debian/Ubuntu ele gera e instala um `.deb`; nas demais compila, faz `make install` em `/usr`
+e executa os mesmos passos de sistema do *postinst*. Opções: `--build`, `--deb arquivo.deb`,
+`--no-start`.
 
 ## Primeira configuração
 
@@ -82,11 +112,11 @@ na sua sessão — a partir daí eles sobem sozinhos no login.
 ## Desinstalar
 
 ```bash
-./uninstall.sh              # remove o pacote/arquivos, mantém ~/.config/sonusgrid
-./uninstall.sh --purge      # remove também a configuração
+./SonusGrid-*.run -- --uninstall          # ou: curl … | bash -s -- --uninstall
+./SonusGrid-*.run -- --uninstall --purge  # remove também ~/.config/sonusgrid
+sudo apt remove sonusgrid                 # só o pacote
+./uninstall.sh [--purge]                  # a partir do repositório
 ```
-
-Ou, só com apt: `sudo apt remove sonusgrid` (`purge` para apagar drop-ins).
 
 ---
 
@@ -103,7 +133,9 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh      # Rust ≥ 1
 ```bash
 make build            # statime + engine + cli + bridge + gui
 make test             # cargo test + tests/smoke/cli.sh
-make deb              # dist/sonusgrid_<v>-1_amd64.deb
+make deb              # dist/sonusgrid_<v>-1_<arch>.deb (arquitetura do host)
+make run-installer    # dist/SonusGrid-<v>-<arch>.run
+make release          # deb + run + dist/SHA256SUMS
 sudo make install     # alternativa ao .deb (PREFIX=/usr por padrão)
 ```
 

@@ -73,10 +73,11 @@ sonusgrid devices    # lista devices Dante visíveis na rede via mDNS
 
 ### Mandando áudio do Linux para o SonusGrid
 
-**Pela GUI** (recomendado): abra o SonusGrid → aba **Roteamento** → a página
-mostra apps tocando no SonusGrid e conexões JACK. Use o botão **Mover** para
-trocar o destino de um app. Para fazer conexões customizadas, use o botão
-**Roteamento avançado (qpwgraph)**.
+**Pela GUI**: abra o SonusGrid → página **Rede Dante**. Ela lista os
+dispositivos Dante descobertos na rede, o buffer JACK da sessão PipeWire e
+os atalhos para o **mixer por aplicativo (pavucontrol)** — onde você escolhe
+o SonusGrid como saída de cada app — e para o **patchbay visual (qpwgraph)**
+para ligar portas JACK/PipeWire à mão.
 
 **Pelo pavucontrol**:
 
@@ -248,7 +249,7 @@ sonusgrid logs clock      # só PTP
 sonusgrid logs audio      # só bridge de áudio (Pulse + JACK + ALSA)
 ```
 
-Pela GUI: aba **Ferramentas** → **Ver logs**.
+Pela GUI: página **Diagnóstico** → **Verificações** (o `doctor` como lista) e **Logs** (ao vivo, com filtro).
 
 ---
 
