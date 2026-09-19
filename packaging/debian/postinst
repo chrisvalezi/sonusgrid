@@ -67,7 +67,8 @@ Compatible with Dante audio networks; not affiliated with Audinate Pty Ltd.
 EOF
         if [ "$IN_AUDIO" = "0" ] && [ -n "${SUDO_USER:-}" ]; then
             cat <<EOF
-[!] Adicione seu usuário ao grupo 'audio' para acesso ao PTP de hardware:
+[!] Adicione seu usuário ao grupo 'audio' (PTP de hardware + prioridade
+    de tempo-real para o áudio):
        sudo usermod -aG audio $SUDO_USER
     Depois faça logout/login (ou reinicie) para a mudança valer.
 

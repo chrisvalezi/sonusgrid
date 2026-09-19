@@ -532,6 +532,7 @@ dependencies = [
  "ctrlc",
  "env_logger",
  "jack",
+ "libc",
  "libpulse-binding",
  "libpulse-simple-binding",
  "log",

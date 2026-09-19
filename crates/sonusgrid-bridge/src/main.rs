@@ -118,9 +118,64 @@ fn mix_sat(a: i32, b: i32) -> i32 {
     a.saturating_add(b)
 }
 
+/// Put the calling thread on SCHED_FIFO. Without this any CPU load on the
+/// box (a compiler, a browser, a screenshot) delays the ALSA writer past the
+/// engine's 4 ms latency budget and the Dante stream drops out ("tx lag of N
+/// samples detected").
+///
+/// Two paths:
+///  1. `pthread_setschedparam` — works when RLIMIT_RTPRIO allows it (the
+///     unit sets LimitRTPRIO=95, but a `systemd --user` manager can only
+///     hand out what its own hard limit permits — usually 0 unless
+///     /etc/security/limits.d grants the `audio` group rtprio).
+///  2. rtkit (`org.freedesktop.RealtimeKit1.MakeThreadRealtimeWithPID`) —
+///     the desktop-standard fallback PipeWire itself uses. rtkit caps the
+///     priority (default 20) and requires RLIMIT_RTTIME to be set.
+fn set_realtime(name: &str, prio: i32) {
+    let param = libc::sched_param { sched_priority: prio };
+    let rc = unsafe { libc::pthread_setschedparam(libc::pthread_self(), libc::SCHED_FIFO, &param) };
+    if rc == 0 {
+        log::info!("{name}: SCHED_FIFO priority {prio}");
+        return;
+    }
+    // rtkit insists on an RTTIME watchdog (µs). 200 ms is its default max.
+    let rl = libc::rlimit { rlim_cur: 200_000, rlim_max: 200_000 };
+    unsafe { libc::setrlimit(libc::RLIMIT_RTTIME, &rl) };
+    let pid = std::process::id();
+    let tid = unsafe { libc::syscall(libc::SYS_gettid) } as u64;
+    let rtkit_prio = 20u32;
+    let out = std::process::Command::new("busctl")
+        .args([
+            "--system", "--timeout=3", "call",
+            "org.freedesktop.RealtimeKit1", "/org/freedesktop/RealtimeKit1",
+            "org.freedesktop.RealtimeKit1", "MakeThreadRealtimeWithPID", "ttu",
+            &pid.to_string(), &tid.to_string(), &rtkit_prio.to_string(),
+        ])
+        .output();
+    match out {
+        Ok(o) if o.status.success() => {
+            log::info!("{name}: SCHED_FIFO priority {rtkit_prio} via rtkit");
+        }
+        Ok(o) => log::warn!(
+            "{name}: no realtime scheduling (rlimit errno {rc}; rtkit: {}). Audio may drop out under CPU load — \
+             add the user to the `audio` group and re-login (limits.d/sonusgrid.conf grants rtprio).",
+            String::from_utf8_lossy(&o.stderr).trim()
+        ),
+        Err(e) => log::warn!("{name}: no realtime scheduling (rlimit errno {rc}; busctl: {e})"),
+    }
+}
+
+fn lock_memory() {
+    // Avoid page faults in the audio threads.
+    if unsafe { libc::mlockall(libc::MCL_CURRENT | libc::MCL_FUTURE) } != 0 {
+        log::warn!("mlockall failed; page faults may cause xruns (check LimitMEMLOCK)");
+    }
+}
+
 fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
     let args = Cli::parse();
+    lock_memory();
 
     let channels = args.channels as usize;
     let period = args.period as usize;
@@ -184,6 +239,7 @@ fn main() -> Result<()> {
     let stop_tx = stop.clone();
     let tx_jack_rings_tx = tx_jack_rings.clone();
     let tx = std::thread::spawn(move || {
+        set_realtime("TX thread", 70);
         let mut pa_buf = vec![0u8; period * 2 * 4]; // i32 LE × 2ch × period
         let mut alsa_buf = vec![0i32; period * channels];
         let silence = vec![0i32; period * channels];
@@ -236,6 +292,7 @@ fn main() -> Result<()> {
     let stop_rx = stop.clone();
     let rx_jack_rings_rx = rx_jack_rings.clone();
     let rx = std::thread::spawn(move || {
+        set_realtime("RX thread", 70);
         let pcm_io = match alsa_cap.io_i32() {
             Ok(io) => io,
             Err(e) => { log::error!("RX io_i32: {e}"); return; }

@@ -235,12 +235,25 @@ pub fn run(cfg_path: &Path, _lang: crate::text::Lang, json_out: bool) -> Result<
         }
     }
 
-    // 9. RT priority limits (Linux only — macOS schedules audio threads via
-    //    QoS classes, no equivalent file).
+    // 9. Real-time scheduling for the audio bridge: needs the session's hard
+    //    RLIMIT_RTPRIO > 0 (limits.d + `audio` group + re-login) or rtkit.
     #[cfg(target_os = "linux")]
-    if let Ok(s) = std::fs::read_to_string("/etc/security/limits.d/audio.conf") {
-        if s.contains("rtprio") {
-            greens.push("✓ RT priority configurado em /etc/security/limits.d/audio.conf".into());
+    {
+        let hard_rtprio = std::fs::read_to_string("/proc/self/limits")
+            .ok()
+            .and_then(|s| s.lines().find(|l| l.starts_with("Max realtime priority")).map(|l| l.to_string()))
+            .and_then(|l| l.split_whitespace().nth(4).and_then(|x| x.parse::<u32>().ok()))
+            .unwrap_or(0);
+        let rtkit = service_active_system("rtkit-daemon");
+        if hard_rtprio >= 20 {
+            greens.push(format!("✓ prioridade tempo-real disponível (rtprio {hard_rtprio})"));
+        } else if rtkit {
+            greens.push("✓ rtkit ativo — o bridge pede prioridade tempo-real por ele (limite 20). Para 95: relogue após entrar no grupo audio".into());
+        } else {
+            problems.push(Problem {
+                pt: "Sem prioridade tempo-real (rtprio 0 e rtkit inativo): o áudio vai cortar sob carga de CPU. Entre no grupo 'audio' e faça logout/login (limits.d/sonusgrid.conf).".into(),
+                en: "No realtime scheduling (rtprio 0 and rtkit inactive): audio will drop out under CPU load. Join the 'audio' group and log out/in (limits.d/sonusgrid.conf).".into(),
+            });
         }
     }
 
@@ -304,6 +317,30 @@ pub fn run(cfg_path: &Path, _lang: crate::text::Lang, json_out: bool) -> Result<
             }
         } else {
             greens.push("✓ sem relógio PTP de hardware (usa relógio de software — OK)".into());
+        }
+    }
+
+    // 11b. systemd --user responsive? Multiple GUI instances hammering it?
+    //      (Seen in the wild: 11 stale GUIs × 45 status calls/s pinned the
+    //      user manager at 100 % CPU and start jobs never ran.)
+    #[cfg(target_os = "linux")]
+    {
+        let n_gui = count_user_processes("python3 -m sonus_gtk") + count_user_processes("sonusgrid-gtk");
+        if n_gui > 1 {
+            problems.push(Problem {
+                pt: format!("{n_gui} instâncias da GUI rodando ao mesmo tempo (versões antigas sobrecarregam o systemd --user). Feche-as: pkill -f 'python3 -m sonus_gtk'"),
+                en: format!("{n_gui} GUI instances running at once (old versions overload systemd --user). Close them: pkill -f 'python3 -m sonus_gtk'"),
+            });
+        }
+        if let Some(cpu) = user_manager_cpu_percent() {
+            if cpu >= 50.0 {
+                problems.push(Problem {
+                    pt: format!("systemd --user está usando {cpu:.0}% de CPU — jobs de start não vão rodar. Feche processos que chamam systemctl em loop (GUIs antigas) e tente de novo."),
+                    en: format!("systemd --user is using {cpu:.0}% CPU — start jobs won't run. Close processes calling systemctl in a loop (old GUIs) and retry."),
+                });
+            } else {
+                greens.push(format!("✓ systemd --user responsivo ({cpu:.0}% CPU)"));
+            }
         }
     }
 
@@ -448,6 +485,40 @@ fn process_rss_mb(comm: &str) -> Option<u64> {
         })
         .max()?;
     Some(kb / 1024)
+}
+
+/// Number of this user's processes whose command line contains `needle`.
+#[cfg(target_os = "linux")]
+fn count_user_processes(needle: &str) -> usize {
+    let uid = unsafe { libc::geteuid() }.to_string();
+    let out = Command::new("ps").args(["-o", "uid=,args=", "-u", &uid]).output();
+    match out {
+        Ok(o) => String::from_utf8_lossy(&o.stdout)
+            .lines()
+            .filter(|l| l.contains(needle) && !l.contains("doctor"))
+            .count(),
+        Err(_) => 0,
+    }
+}
+
+/// CPU usage of the user's `systemd --user` manager, sampled over 300 ms.
+#[cfg(target_os = "linux")]
+fn user_manager_cpu_percent() -> Option<f64> {
+    let uid = unsafe { libc::geteuid() }.to_string();
+    let out = Command::new("pgrep").args(["-u", &uid, "-x", "systemd"]).output().ok()?;
+    let pid = String::from_utf8_lossy(&out.stdout).lines().next()?.trim().to_string();
+    let read = || -> Option<u64> {
+        let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).ok()?;
+        let rest = stat.rsplit(')').next()?;
+        let f: Vec<&str> = rest.split_whitespace().collect();
+        // fields after ')' : state(0) ppid(1) … utime(11) stime(12)
+        Some(f.get(11)?.parse::<u64>().ok()? + f.get(12)?.parse::<u64>().ok()?)
+    };
+    let t0 = read()?;
+    std::thread::sleep(std::time::Duration::from_millis(300));
+    let t1 = read()?;
+    let hz = unsafe { libc::sysconf(libc::_SC_CLK_TCK) } as f64;
+    Some((t1 - t0) as f64 / hz / 0.3 * 100.0)
 }
 
 #[cfg(target_os = "linux")]

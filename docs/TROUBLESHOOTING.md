@@ -26,6 +26,35 @@ log e sai com erro. As causas mais comuns:
 | `no clock available (timeout waiting for overlay update)` | ponte subiu antes do PTP travar | ≥ 0.2.1 espera o lock automaticamente; se persistir, não há *master* PTP na rede — veja abaixo |
 | `Start request repeated too quickly` (só ≤ 0.2.0) | limite de restart do systemd | `systemctl --user reset-failed sonusgrid-clock sonusgrid-audio` (o `start` da 0.2.1 já faz isso) |
 
+## `start` "aceita" mas nada sobe (job preso no systemd --user)
+
+Sintoma: `sonusgrid start` termina com "não iniciou o serviço (job preso)", a GUI fica em
+"Iniciando…" e `systemctl --user list-jobs` mostra jobs em *waiting* para sempre. O
+gerenciador `systemd --user` da sua sessão está sobrecarregado — na prática, algum processo
+chama `systemctl` em loop. Caso real: 11 instâncias esquecidas da GUI 0.2.x (bug de
+`idle_add`) fazendo 45 `sonusgrid status` por segundo cada.
+
+```bash
+sonusgrid doctor                     # aponta GUIs duplicadas e o gerenciador a 100 %
+pkill -f 'python3 -m sonus_gtk'      # fecha todas as GUIs
+top -p $(pgrep -u $USER -x systemd)  # deve voltar a ~0 %
+sonusgrid start
+```
+
+## Áudio corta sob carga de CPU ("tx lag of N samples detected")
+
+As threads de áudio precisam de prioridade tempo-real. Desde a 0.3.0 o bridge e o engine pedem
+`SCHED_FIFO` — direto (se o limite `rtprio` da sessão permitir) ou via **rtkit**. Para o
+limite direto valer, seu usuário precisa estar no grupo `audio` **e** ter feito logout/login
+depois da instalação (o pacote instala `/etc/security/limits.d/sonusgrid.conf`). Confira:
+
+```bash
+sonusgrid doctor | grep -i tempo-real
+ps -L -o tid,cls,rtprio,comm -p $(pgrep -x sonusgrid-bridg)   # TX/RX/flows devem ser RR/FF
+```
+
+Se aparecer "no realtime scheduling", verifique `systemctl is-active rtkit-daemon` e o grupo.
+
 ## "sonusgrid-clock.service está em estado 'failed'"
 
 ```bash

@@ -109,6 +109,20 @@ pub fn start(cfg_path: &Path, lang: Lang) -> Result<()> {
             );
             Ok(())
         }
+        WaitOutcome::Stuck => {
+            eprintln!();
+            dual_println(
+                "O systemd --user aceitou o pedido mas não iniciou o serviço (job preso). \
+                 Normalmente é o gerenciador sobrecarregado — veja: systemctl --user list-jobs ; top -p $(pgrep -u $USER -x systemd)",
+                "systemd --user accepted the request but never started the service (stuck job). \
+                 Usually the user manager is overloaded — see: systemctl --user list-jobs ; top -p $(pgrep -u $USER -x systemd)",
+            );
+            dual_println(
+                "Dica: rode `sonusgrid doctor` — ele detecta GUIs antigas duplicadas e o gerenciador travado.",
+                "Hint: run `sonusgrid doctor` — it detects duplicated old GUIs and a stuck manager.",
+            );
+            anyhow::bail!("systemd --user did not execute the start job")
+        }
         WaitOutcome::Failed(unit) => {
             eprintln!();
             dual_println(
@@ -209,6 +223,8 @@ pub fn list_interfaces() -> Vec<String> {
 enum WaitOutcome {
     Active,
     StillActivating,
+    /// The start job is queued but systemd --user hasn't executed it.
+    Stuck,
     Failed(String),
 }
 
@@ -216,8 +232,7 @@ enum WaitOutcome {
 fn wait_units_active(timeout: Duration) -> WaitOutcome {
     let t0 = Instant::now();
     loop {
-        let clock = unit_state(CLOCK_UNIT);
-        let audio = unit_state(AUDIO_UNIT);
+        let (clock, audio) = unit_states();
         if clock == "failed" {
             return WaitOutcome::Failed(CLOCK_UNIT.into());
         }
@@ -235,6 +250,11 @@ fn wait_units_active(timeout: Duration) -> WaitOutcome {
             continue;
         }
         if t0.elapsed() > timeout {
+            // "inactive" after all this time means systemd never even ran the
+            // job — the user manager is stuck/overloaded, not the network.
+            if clock == "inactive" {
+                return WaitOutcome::Stuck;
+            }
             return WaitOutcome::StillActivating;
         }
         std::thread::sleep(Duration::from_millis(500));
@@ -254,8 +274,7 @@ fn print_journal_tail(unit: &str, lines: usize) {
 
 pub fn status(cfg_path: &Path, _lang: Lang, json_out: bool) -> Result<()> {
     let cfg = config::load(cfg_path)?;
-    let clock_state = unit_state(CLOCK_UNIT);
-    let audio_state = unit_state(AUDIO_UNIT);
+    let (clock_state, audio_state) = unit_states();
     let clock = clock_state == "active";
     let audio = audio_state == "active";
     #[cfg(target_os = "linux")]
@@ -372,6 +391,31 @@ fn on_off(b: bool) -> &'static str {
     } else {
         "inactive"
     }
+}
+
+/// Both unit states with a single `systemctl` round-trip (the GUI polls this
+/// every 2 s; keep the load on the user manager minimal).
+#[cfg(target_os = "linux")]
+pub fn unit_states() -> (String, String) {
+    let out = Command::new("systemctl")
+        .args(["--user", "is-active", CLOCK_UNIT, AUDIO_UNIT])
+        .stderr(Stdio::null())
+        .output();
+    match out {
+        Ok(o) => {
+            let s = String::from_utf8_lossy(&o.stdout);
+            let mut it = s.lines().map(|l| l.trim().to_string());
+            let a = it.next().filter(|x| !x.is_empty()).unwrap_or_else(|| "unknown".into());
+            let b = it.next().filter(|x| !x.is_empty()).unwrap_or_else(|| "unknown".into());
+            (a, b)
+        }
+        Err(_) => ("unknown".into(), "unknown".into()),
+    }
+}
+
+#[cfg(target_os = "macos")]
+pub fn unit_states() -> (String, String) {
+    (unit_state(CLOCK_UNIT), unit_state(AUDIO_UNIT))
 }
 
 /// `active`, `activating`, `inactive`, `failed`, `deactivating` … as

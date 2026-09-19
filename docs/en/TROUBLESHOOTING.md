@@ -23,6 +23,25 @@ and then **verifies** both services, printing the journal tail on failure. Commo
 | `no clock available (timeout …)` | bridge started before PTP lock | ≥ 0.2.1 waits for the lock; if it persists there is no PTP master on the LAN |
 | `Start request repeated too quickly` (≤ 0.2.0 only) | systemd start-rate limit | `systemctl --user reset-failed sonusgrid-clock sonusgrid-audio` |
 
+## `start` is accepted but nothing comes up (stuck systemd --user job)
+
+`sonusgrid start` ends with "never started the service (stuck job)" and `systemctl --user
+list-jobs` shows jobs *waiting* forever: the user manager is overloaded by something calling
+`systemctl` in a loop (real case: 11 forgotten 0.2.x GUI instances polling 45×/s each).
+
+```bash
+sonusgrid doctor                     # flags duplicated GUIs and a spinning manager
+pkill -f 'python3 -m sonus_gtk'
+sonusgrid start
+```
+
+## Audio drops out under CPU load ("tx lag of N samples detected")
+
+Since 0.3.0 the bridge and engine threads request SCHED_FIFO — directly when the session's
+`rtprio` limit allows it, else via **rtkit**. For the direct path, be in the `audio` group
+and log out/in after installing (`/etc/security/limits.d/sonusgrid.conf`). Check with
+`sonusgrid doctor` and `ps -L -o tid,cls,rtprio,comm -p $(pgrep -x sonusgrid-bridg)`.
+
 ## "… is in 'failed' state"
 
 `sonusgrid logs clock` (or `audio`) to see why, then `sonusgrid start`.

@@ -26,6 +26,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Release (deb + run for amd64 and arm64, checksums, notes from this file).
 - `make bump VERSION=…`, `make check-version`, `make release`.
 
+### Fixed
+- **Dropouts under CPU load** ("tx lag of N samples detected"): the bridge's
+  TX/RX threads and the engine's flow threads now run SCHED_FIFO, via
+  RLIMIT_RTPRIO when the session allows it or through **rtkit** otherwise;
+  the package installs `/etc/security/limits.d/sonusgrid.conf` (rtprio /
+  memlock for the `audio` group). Zero dropouts in a 15 s 8-core stress test
+  that previously produced hundreds.
+- **"Start does nothing"**: `sonusgrid start` now tells you when systemd
+  --user accepted but never ran the job, and `doctor` flags a spinning user
+  manager and duplicated GUI instances (11 stale 0.2.x GUIs polling 45×/s
+  had pinned `systemd --user` at 100 % CPU). `status` makes one systemctl
+  call instead of two.
+
 ### Changed
 - `config check` accepts 44.1 / 48 / 88.2 / 96 kHz.
 - Engine log level defaults to `info` in the audio unit (was `debug`).

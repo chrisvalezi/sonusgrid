@@ -189,6 +189,7 @@ install: build
 	install -Dm 0644 systemd/sonusgrid-audio.service $(DESTDIR)$(PREFIX)/lib/systemd/user/sonusgrid-audio.service
 	install -Dm 0644 systemd/sonusgrid-pipewire-clock.conf $(DESTDIR)$(PREFIX)/lib/systemd/user/pipewire.service.d/sonusgrid-clock.conf
 	install -Dm 0644 packaging/udev/60-sonusgrid-ptp.rules $(DESTDIR)/usr/lib/udev/rules.d/60-sonusgrid-ptp.rules
+	install -Dm 0644 packaging/limits.d/sonusgrid.conf $(DESTDIR)/etc/security/limits.d/sonusgrid.conf
 	install -Dm 0644 alsa/sonusgrid.conf.in $(DESTDIR)$(PREFIX)/share/sonusgrid/sonusgrid.conf.in
 	install -Dm 0644 gui/sonus-gtk/data/io.sonusgrid.SonusGrid.desktop $(DESTDIR)$(PREFIX)/share/applications/io.sonusgrid.SonusGrid.desktop
 	install -Dm 0644 gui/sonus-gtk/data/icons/hicolor/scalable/apps/io.sonusgrid.SonusGrid.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/io.sonusgrid.SonusGrid.svg
@@ -217,6 +218,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/user/sonusgrid-audio.service
 	rm -f $(DESTDIR)$(PREFIX)/lib/systemd/user/pipewire.service.d/sonusgrid-clock.conf
 	rm -f $(DESTDIR)/usr/lib/udev/rules.d/60-sonusgrid-ptp.rules
+	rm -f $(DESTDIR)/etc/security/limits.d/sonusgrid.conf
 	rm -rf $(DESTDIR)$(PREFIX)/share/sonusgrid
 	rm -rf $(DESTDIR)$(PREFIX)/share/doc/sonusgrid
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/io.sonusgrid.SonusGrid.desktop
