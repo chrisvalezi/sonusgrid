@@ -282,7 +282,7 @@ pub fn status(cfg_path: &Path, _lang: Lang, json_out: bool) -> Result<()> {
     #[cfg(target_os = "macos")]
     let sink_loaded = std::path::Path::new("/Library/Audio/Plug-Ins/HAL/SonusGrid.driver").exists();
     // The unified bridge embeds the JACK client; if the bridge is up, the
-    // JACK client is up. We probe pw-cli for a node named "SonusGrid" with
+    // JACK client is up. We probe pw-cli for a node named "SonusGrid-JACK" with
     // client.api == jack to confirm the JACK client registered successfully.
     #[cfg(target_os = "linux")]
     let jack_active = audio && jack_client_present();
@@ -352,8 +352,7 @@ pub fn status(cfg_path: &Path, _lang: Lang, json_out: bool) -> Result<()> {
 #[cfg(target_os = "linux")]
 fn jack_client_present() -> bool {
     // Probe: pw-cli list nodes for one with `client.api = "jack"` AND
-    // `node.name = "SonusGrid"` — that's our embedded JACK client (the
-    // null-sink with the same name has no client.api property). The
+    // `node.name = "SonusGrid-JACK"` — that's our embedded JACK client. The
     // boundaries between PipeWire object blocks aren't perfectly machine-
     // readable from pw-cli's text format, so we just scan the whole output
     // line by line and flip both flags when we see them; an `id` line
@@ -375,7 +374,7 @@ fn jack_client_present() -> bool {
             has_name = false;
             is_jack = false;
         }
-        if trimmed.contains("node.name = \"SonusGrid\"") {
+        if trimmed.contains("node.name = \"SonusGrid-JACK\"") {
             has_name = true;
         }
         if trimmed.contains("client.api = \"jack\"") {

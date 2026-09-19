@@ -16,7 +16,7 @@ fala com a rede Dante.
 ```
    apps Pulse           DAW JACK (Reaper, Ardour, Bitwig)
    (Spotify, Chrome,    │
-    pavucontrol)        │ JACK ports SonusGrid:tx_01..tx_NN
+    pavucontrol)        │ JACK ports SonusGrid-JACK:tx_01..tx_NN
         │               │
         │ PulseAudio    ▼
         ▼            ┌────────────────────────────────────┐
@@ -104,7 +104,7 @@ O SonusGrid expõe **dois caminhos de captura**, dependendo do app:
   `pavucontrol → Gravação` como se fosse um microfone.
 
 * **Para DAWs JACK** (Reaper, Ardour, Bitwig) — as portas
-  `SonusGrid:rx_01..rx_NN` recebem áudio multicanal direto, sem o limite de
+  `SonusGrid-JACK:rx_01..rx_NN` recebem áudio multicanal direto, sem o limite de
   2 canais. Veja [DAW.md](./DAW.md).
 
 ### Parando
@@ -205,7 +205,7 @@ quer um grafo PipeWire mais limpo. A GUI tem um switch dedicado.
    * **Audacity / OBS**: seleciona `SonusGrid_RX` como input → grava
      estéreo (canais 1+2).
    * **Reaper / Ardour**: configura JACK driver → conecta
-     `SonusGrid:rx_01..N` → input das tracks. Multicanal completo.
+     `SonusGrid-JACK:rx_01..N` → input das tracks. Multicanal completo.
 
 ### Tocar um arquivo MP3 nas Genelecs
 

@@ -18,7 +18,7 @@ talks to the Dante network.
 ```
    PulseAudio apps         DAW JACK (Reaper, Ardour, Bitwig)
    (Spotify, Chrome,       │
-    pavucontrol)           │ JACK ports SonusGrid:tx_01..tx_NN
+    pavucontrol)           │ JACK ports SonusGrid-JACK:tx_01..tx_NN
         │                  │
         │ PulseAudio       ▼
         ▼               ┌───────────────────────────────────┐
@@ -101,7 +101,7 @@ SonusGrid exposes **two capture paths**, depending on the app:
   `pavucontrol → Recording` like a microphone.
 
 * **JACK DAWs** (Reaper, Ardour, Bitwig) — the ports
-  `SonusGrid:rx_01..rx_NN` carry full multichannel audio. See [DAW.md](../DAW.md).
+  `SonusGrid-JACK:rx_01..rx_NN` carry full multichannel audio. See [DAW.md](../DAW.md).
 
 ### Stop
 

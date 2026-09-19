@@ -19,16 +19,17 @@ def show_about(parent: Gtk.Widget, version: str) -> None:
     dlg = Adw.AboutDialog(
         application_name="SonusGrid",
         application_icon="io.sonusgrid.SonusGrid",
-        developer_name="Chris Valezi",
+        developer_name="Chris Valezi (@djchrisnobeat)",
         version=version or "—",
         website="https://github.com/chrisvalezi/sonusgrid",
         issue_url="https://github.com/chrisvalezi/sonusgrid/issues",
         license_type=Gtk.License.GPL_3_0,
-        copyright="© 2026 Chris Valezi and SonusGrid contributors",
+        copyright="© 2026 Chris Valezi (@djchrisnobeat) and SonusGrid contributors",
         comments=_t("Transforma um PC Linux em um dispositivo de áudio compatível com redes Dante.",
                     "Turns a Linux box into an audio endpoint compatible with Dante audio networks."),
     )
     dlg.add_legal_section(_t("Compatibilidade Dante", "Dante compatibility"), None, Gtk.License.CUSTOM, DISCLAIMER)
+    dlg.set_developers(["Chris Valezi (@djchrisnobeat) https://github.com/chrisvalezi"])
     dlg.add_credit_section(_t("Engine", "Engine"), [
         "Inferno (Teodor Woźniak) https://github.com/teodly/inferno",
         "Statime (Pendulum Project) https://github.com/pendulum-project/statime",

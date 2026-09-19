@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: sonusgrid
-Upstream-Contact: Chris Valezi <chrisvalezi@gmail.com>
+Upstream-Contact: Chris Valezi (@djchrisnobeat) <chrisvalezi@gmail.com>
 Source: https://github.com/chrisvalezi/sonusgrid
 
 Files: *

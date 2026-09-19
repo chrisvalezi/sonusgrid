@@ -24,7 +24,7 @@ sonusgrid-clock.service  sonusgrid-audio.service        (system) PipeWire
 
 The bridge process owns the single `plug:sonusgrid` ALSA handle and exposes
 two consumer paths: a PipeWire null-sink for casual PA apps (Spotify,
-Firefox) and a JACK client `SonusGrid:tx_NN/rx_NN` for DAWs. Both are mixed
+Firefox) and a JACK client `SonusGrid-JACK:tx_NN/rx_NN` for DAWs. Both are mixed
 per-channel in the bridge before reaching the SonusGrid ALSA plug-in. There
 is **no ffmpeg** anywhere in the runtime path — the native bridge replaced
 it in v0.2.0.

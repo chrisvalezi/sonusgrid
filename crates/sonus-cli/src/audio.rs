@@ -39,27 +39,17 @@ pub fn sink_exists(name: &str) -> bool {
     })
 }
 
-fn source_exists(name: &str) -> bool {
-    let out = Command::new("pactl")
-        .args(["list", "short", "sources"])
-        .output();
-    let Ok(out) = out else { return false };
-    if !out.status.success() {
-        return false;
-    }
-    let s = String::from_utf8_lossy(&out.stdout);
-    s.lines().any(|l| {
-        let mut cols = l.split('\t');
-        let _id = cols.next();
-        cols.next().map(|n| n == name).unwrap_or(false)
-    })
-}
-
 fn rx_source_name(cfg: &Config) -> String {
     format!("{}_RX", cfg.bridge.sink_name)
 }
 
-/// Load the null-sink (TX side) if not already present. Idempotent.
+/// (Re)create the null-sink (TX side).
+///
+/// A stale sink/source pair that survived many bridge restarts was seen to
+/// leave WirePlumber unable to link streams to the sink *by name* (players
+/// hung buffering while `pw-play --target <id>` still worked). So we never
+/// reuse a leftover module: tear it down and create a fresh one, always in
+/// the same order (sink, then source).
 ///
 /// SonusGrid is *opt-in* per-app, never the system default. Two layers
 /// protect that intent:
@@ -68,15 +58,19 @@ fn rx_source_name(cfg: &Config) -> String {
 ///  - We snapshot the user's existing default sink before our load and
 ///    restore it afterwards if WirePlumber promoted us anyway.
 pub fn ensure_sink(cfg: &Config) -> Result<()> {
-    if sink_exists(&cfg.bridge.sink_name) {
-        return Ok(());
+    if let Some(idx) = module_index_for("module-null-sink", "sink_name", &cfg.bridge.sink_name) {
+        let _ = Command::new("pactl").args(["unload-module", &idx]).status();
+        std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     let prior_default = current_default_sink();
 
+    // pipewire-pulse splits module args on whitespace and does not honour
+    // "\ " escapes, so a description with spaces was silently truncated.
+    // Replace spaces with non-breaking spaces to keep the text intact.
     let props = format!(
         "device.description={desc} priority.session=0 node.dont-reconnect=true",
-        desc = cfg.bridge.sink_description.replace(' ', "\\ ")
+        desc = cfg.bridge.sink_description.replace(' ', "\u{a0}")
     );
     let status = Command::new("pactl")
         .args([
@@ -123,8 +117,9 @@ pub fn ensure_sink(cfg: &Config) -> Result<()> {
 /// (Audacity, OBS, ffmpeg-as-input) can capture from.
 pub fn ensure_source(cfg: &Config) -> Result<()> {
     let src_name = rx_source_name(cfg);
-    if source_exists(&src_name) {
-        return Ok(());
+    if let Some(idx) = module_index_for("module-pipe-source", "source_name", &src_name) {
+        let _ = Command::new("pactl").args(["unload-module", &idx]).status();
+        std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     let pipe_path = paths::rx_fifo_path(cfg).display().to_string();
@@ -132,8 +127,8 @@ pub fn ensure_source(cfg: &Config) -> Result<()> {
     let _ = std::fs::remove_file(&pipe_path);
 
     let props = format!(
-        "device.description={desc}\\ RX",
-        desc = cfg.bridge.sink_description.replace(' ', "\\ ")
+        "device.description={desc}\u{a0}RX",
+        desc = cfg.bridge.sink_description.replace(' ', "\u{a0}")
     );
     let status = Command::new("pactl")
         .args([

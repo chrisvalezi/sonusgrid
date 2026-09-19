@@ -151,12 +151,12 @@ no login.
 
 ```
  apps Pulse (Spotify, Firefox)        DAW via JACK (Reaper, Ardour)
-        │  sink "SonusGrid"                 │  SonusGrid:tx_01..tx_16
+        │  sink "SonusGrid"                 │  SonusGrid-JACK:tx_01..tx_16
         ▼                                   ▼
  ┌───────────────────── sonusgrid-bridge ─────────────────────┐
  │  mistura por canal  →  plug:sonusgrid (ALSA, full-duplex)  │
  │  captura            ←  canais 1+2 → fonte "SonusGrid_RX"   │
- │                        todos os canais → SonusGrid:rx_NN   │
+ │                        todos os canais → SonusGrid-JACK:rx_NN   │
  └────────────────────────────┬───────────────────────────────┘
                               │ plug-in ALSA "SonusGrid Engine"
                               │ RTP + mDNS + ARC/CMC     ◄── relógio via Statime (PTP)
@@ -215,6 +215,11 @@ arm64 em `debian:bookworm`, gera `SHA256SUMS` e publica tudo na página de Relea
 
 Precisa de: Rust ≥ 1.75, `pkg-config`, `libasound2-dev`, `libpulse-dev`, `libjack-jackd2-dev`,
 `devscripts debhelper` (para o `.deb`). O `install.sh --build` instala tudo isso.
+
+## Autor
+
+**Chris Valezi** — [@djchrisnobeat](https://github.com/chrisvalezi) · chrisvalezi@gmail.com
+Repositório: https://github.com/chrisvalezi/sonusgrid
 
 ## Licença
 

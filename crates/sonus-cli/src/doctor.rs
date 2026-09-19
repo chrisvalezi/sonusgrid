@@ -272,6 +272,18 @@ pub fn run(cfg_path: &Path, _lang: crate::text::Lang, json_out: bool) -> Result<
         }
     }
 
+    // 9c. Sink volume — purely informational. A very low volume is a
+    //     legitimate safety choice (speakers at 100 %), but it also explains
+    //     "the video plays and I hear nothing", so say it out loud.
+    #[cfg(target_os = "linux")]
+    if let Some(pct) = sink_volume_percent(&cfg.bridge.sink_name) {
+        if pct < 20 {
+            greens.push(format!("✓ sink {} a {pct}% de volume (baixo de propósito? ajuste no pavucontrol se precisar)", cfg.bridge.sink_name));
+        } else {
+            greens.push(format!("✓ sink {} a {pct}% de volume", cfg.bridge.sink_name));
+        }
+    }
+
     // 10. Per-user runtime dir (sockets / FIFO) writable?
     #[cfg(target_os = "linux")]
     {
@@ -519,6 +531,20 @@ fn user_manager_cpu_percent() -> Option<f64> {
     let t1 = read()?;
     let hz = unsafe { libc::sysconf(libc::_SC_CLK_TCK) } as f64;
     Some((t1 - t0) as f64 / hz / 0.3 * 100.0)
+}
+
+/// Current volume (%) of a PipeWire/Pulse sink, via `pactl get-sink-volume`.
+#[cfg(target_os = "linux")]
+fn sink_volume_percent(sink: &str) -> Option<u32> {
+    let out = Command::new("pactl").args(["get-sink-volume", sink]).output().ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let s = String::from_utf8_lossy(&out.stdout);
+    s.split_whitespace()
+        .filter_map(|t| t.strip_suffix('%'))
+        .filter_map(|t| t.parse::<u32>().ok())
+        .max()
 }
 
 #[cfg(target_os = "linux")]

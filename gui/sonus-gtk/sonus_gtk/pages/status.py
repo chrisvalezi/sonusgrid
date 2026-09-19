@@ -61,7 +61,7 @@ class StatusPage(BasePage):
         self.chip_audio = Chip(_t("parado", "stopped"))
         self.row_audio.add_suffix(self.chip_audio)
         self.row_jack = Adw.ActionRow(title=_t("Cliente JACK", "JACK client"),
-                                      subtitle=_t("portas tx_NN / rx_NN para DAWs", "tx_NN / rx_NN ports for DAWs"))
+                                      subtitle=_t("portas SonusGrid-JACK:tx_NN / rx_NN para DAWs", "SonusGrid-JACK:tx_NN / rx_NN ports for DAWs"))
         self.row_jack.add_prefix(Gtk.Image.new_from_icon_name("audio-input-microphone-symbolic"))
         self.chip_jack = Chip(_t("desligado", "off"))
         self.row_jack.add_suffix(self.chip_jack)

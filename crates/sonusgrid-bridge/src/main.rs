@@ -78,7 +78,10 @@ struct Cli {
     #[arg(long, default_value_t = 256)]
     period: u32,
     /// JACK client name for the DAW path. Set to empty string to disable JACK.
-    #[arg(long, default_value = "SonusGrid")]
+    /// Must differ from the PipeWire sink name: tools that pick a target by
+    /// node.name (WirePlumber stream restore, pw-play --target) would
+    /// otherwise route system audio into the JACK client instead of the sink.
+    #[arg(long, default_value = "SonusGrid-JACK")]
     jack_client: String,
 }
 

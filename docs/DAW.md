@@ -11,7 +11,7 @@
 ```
    Spotify / Firefox → SonusGrid (Pulse sink)  →─┐
                                                   ├─► mix por canal ─► Dante
-   Ableton / Reaper  → SonusGrid:tx_01..tx_16 ────┘  (canais 1+2 = sistema,
+   Ableton / Reaper  → SonusGrid-JACK:tx_01..tx_16 ────┘  (canais 1+2 = sistema,
                        (cliente JACK)                 1-16 = DAW)
 ```
 
@@ -29,7 +29,7 @@ sonusgrid status
 # JACK client    : active     ← DAWs conectam aqui
 
 pactl list sinks short | grep SonusGrid     # sink Pulse
-pw-link -i | grep SonusGrid:tx              # 16 portas JACK in
+pw-link -i | grep SonusGrid-JACK:tx              # 16 portas JACK in
 pw-link -o | grep SonusGrid:rx              # 16 portas JACK out
 ```
 
@@ -38,8 +38,8 @@ pw-link -o | grep SonusGrid:rx              # 16 portas JACK out
 Quando o **Modo DAW** está ativo, o SonusGrid registra um cliente JACK chamado
 `SonusGrid` com:
 
-* **16 portas de entrada** (DAW → Dante): `SonusGrid:tx_01` … `SonusGrid:tx_16`
-* **16 portas de saída** (Dante → DAW): `SonusGrid:rx_01` … `SonusGrid:rx_16`
+* **16 portas de entrada** (DAW → Dante): `SonusGrid-JACK:tx_01` … `SonusGrid-JACK:tx_16`
+* **16 portas de saída** (Dante → DAW): `SonusGrid-JACK:rx_01` … `SonusGrid-JACK:rx_16`
 
 Convenção: `tx_*` é o que o DAW *envia* (transmit) para a rede Dante;
 `rx_*` é o que vem da rede Dante para dentro do DAW.
@@ -65,8 +65,8 @@ ou visualmente em **qpwgraph** / **qjackctl → Connect**.
 5. **Auto-start JACK if needed**: ☐ **DESMARCADO**
 6. **Launch command**: **VAZIO** (deixa em branco)
 7. **Routing**: insira tracks e em cada track escolha:
-   * Input: `SonusGrid:rx_NN`
-   * Master/Hardware out: `SonusGrid:tx_NN`
+   * Input: `SonusGrid-JACK:rx_NN`
+   * Master/Hardware out: `SonusGrid-JACK:tx_NN`
 
 #### Por que "Auto-start JACK" fica desmarcado
 
@@ -104,14 +104,14 @@ PipeWire e lista os clients ativos — no-op útil que cria a conexão).
    (sob PipeWire, "alsa" é só o backend que o JACK-compat layer usa internamente).
 2. **Sample rate** = 48000.
 3. Crie tracks → em cada uma:
-   * Input → `SonusGrid:rx_NN`
-   * Output → `SonusGrid:tx_NN` (ou via Master Bus)
+   * Input → `SonusGrid-JACK:rx_NN`
+   * Output → `SonusGrid-JACK:tx_NN` (ou via Master Bus)
 
 ### Bitwig Studio
 
 1. **Settings → Audio**
 2. **Driver type**: `JACK`
-3. **Inputs / Outputs**: marque os pares `SonusGrid:rx_NN` e `SonusGrid:tx_NN` que vai usar.
+3. **Inputs / Outputs**: marque os pares `SonusGrid-JACK:rx_NN` e `SonusGrid-JACK:tx_NN` que vai usar.
 4. **Sample rate**: 48000.
 
 ### qpwgraph (visual / non-DAW)
@@ -122,8 +122,8 @@ Para roteamento manual (ex.: enviar um sintetizador standalone para Dante):
 qpwgraph &
 ```
 
-Arraste de qualquer porta de saída do seu app para `SonusGrid:tx_01/02`.
-Arraste de `SonusGrid:rx_01/02` para a entrada do app.
+Arraste de qualquer porta de saída do seu app para `SonusGrid-JACK:tx_01/02`.
+Arraste de `SonusGrid-JACK:rx_01/02` para a entrada do app.
 
 ## Latência
 
@@ -328,7 +328,7 @@ banda na rede Dante dobra. Verifique se seu switch suporta o tráfego adicional
 ```
    Spotify / Firefox → SonusGrid (Pulse sink)  →─┐
                                                   ├─► per-channel mix ─► Dante
-   Ableton / Reaper  → SonusGrid:tx_01..tx_16 ────┘  (channels 1+2 = system,
+   Ableton / Reaper  → SonusGrid-JACK:tx_01..tx_16 ────┘  (channels 1+2 = system,
                        (JACK client)                  1-16 = DAW)
 ```
 
@@ -347,7 +347,7 @@ sonusgrid status
 # JACK client    : active     ← DAWs connect here
 
 pactl list sinks short | grep SonusGrid     # Pulse sink
-pw-link -i | grep SonusGrid:tx              # 16 JACK in ports
+pw-link -i | grep SonusGrid-JACK:tx              # 16 JACK in ports
 pw-link -o | grep SonusGrid:rx              # 16 JACK out ports
 ```
 
@@ -356,8 +356,8 @@ pw-link -o | grep SonusGrid:rx              # 16 JACK out ports
 When **DAW mode** is active, SonusGrid registers a JACK client named
 `SonusGrid` with:
 
-* **16 input ports** (DAW → Dante): `SonusGrid:tx_01` … `SonusGrid:tx_16`
-* **16 output ports** (Dante → DAW): `SonusGrid:rx_01` … `SonusGrid:rx_16`
+* **16 input ports** (DAW → Dante): `SonusGrid-JACK:tx_01` … `SonusGrid-JACK:tx_16`
+* **16 output ports** (Dante → DAW): `SonusGrid-JACK:rx_01` … `SonusGrid-JACK:rx_16`
 
 Convention: `tx_*` is what the DAW *sends* (transmit) to the Dante network;
 `rx_*` is what comes from Dante into the DAW.
@@ -383,8 +383,8 @@ or visually in **qpwgraph** / **qjackctl → Connect**.
 5. **Auto-start JACK if needed**: ☐ **UNCHECKED**
 6. **Launch command**: **EMPTY** (leave blank)
 7. **Routing**: insert tracks; on each track choose:
-   * Input: `SonusGrid:rx_NN`
-   * Master/Hardware out: `SonusGrid:tx_NN`
+   * Input: `SonusGrid-JACK:rx_NN`
+   * Master/Hardware out: `SonusGrid-JACK:tx_NN`
 
 #### Why "Auto-start JACK" stays unchecked
 
@@ -421,14 +421,14 @@ libjack and lists clients — a useful no-op that creates the connection).
 1. In the startup dialog: **Audio System** = `JACK`, **Driver** = `alsa`.
 2. **Sample rate** = 48000.
 3. Create tracks → per track:
-   * Input → `SonusGrid:rx_NN`
-   * Output → `SonusGrid:tx_NN` (or via Master Bus)
+   * Input → `SonusGrid-JACK:rx_NN`
+   * Output → `SonusGrid-JACK:tx_NN` (or via Master Bus)
 
 ### Bitwig Studio
 
 1. **Settings → Audio**
 2. **Driver type**: `JACK`
-3. **Inputs / Outputs**: pick the `SonusGrid:rx_NN` and `SonusGrid:tx_NN`
+3. **Inputs / Outputs**: pick the `SonusGrid-JACK:rx_NN` and `SonusGrid-JACK:tx_NN`
    pairs you'll use.
 4. **Sample rate**: 48000.
 
@@ -438,8 +438,8 @@ libjack and lists clients — a useful no-op that creates the connection).
 qpwgraph &
 ```
 
-Drag from any app's output port to `SonusGrid:tx_01/02`. Drag from
-`SonusGrid:rx_01/02` into the app's input.
+Drag from any app's output port to `SonusGrid-JACK:tx_01/02`. Drag from
+`SonusGrid-JACK:rx_01/02` into the app's input.
 
 ## Latency
 

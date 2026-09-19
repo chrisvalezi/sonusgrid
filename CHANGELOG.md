@@ -33,6 +33,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the package installs `/etc/security/limits.d/sonusgrid.conf` (rtprio /
   memlock for the `audio` group). Zero dropouts in a 15 s 8-core stress test
   that previously produced hundreds.
+- **Player hangs buffering when routed to SonusGrid** (YouTube "spinner"):
+  a stale `SonusGrid_RX` pipe-source that survived many bridge restarts left
+  WirePlumber unable to link streams to the sink *by name* (the way browsers
+  and stream-restore target it). The bridge now tears down and recreates
+  its sink and source on every start, in a fixed order; sink descriptions
+  with spaces are no longer truncated. `doctor` reports the sink volume.
 - **"Start does nothing"**: `sonusgrid start` now tells you when systemd
   --user accepted but never ran the job, and `doctor` flags a spinning user
   manager and duplicated GUI instances (11 stale 0.2.x GUIs polling 45×/s
@@ -40,6 +46,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   call instead of two.
 
 ### Changed
+- The embedded JACK client is now named **`SonusGrid-JACK`** (ports
+  `SonusGrid-JACK:tx_NN/rx_NN`). It used to share the name of the PipeWire
+  sink, so tools that pick a target by name (WirePlumber stream restore,
+  `pw-play --target`) could route system audio into the JACK client — a
+  node that never advances the clock — and the player would hang buffering.
 - `config check` accepts 44.1 / 48 / 88.2 / 96 kHz.
 - Engine log level defaults to `info` in the audio unit (was `debug`).
 - Debian package: `Architecture: any`, native arm64 builds, depends on
