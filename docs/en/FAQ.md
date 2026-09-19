@@ -43,6 +43,13 @@ limitations:
 Recommendation: run a one-week regression test before depending on it. Keep
 official Windows DVS as a fallback in critical chains.
 
+## Does it support the secondary network (Primary/Secondary redundancy)?
+
+Not yet. SonusGrid uses a single interface and shows up as a "primary-only" device — it works on a
+redundant network, just without redundancy for the PC itself. What is missing, what blocks it (a
+two-port device is needed to capture the protocol) and how to help are in
+[ROADMAP.md](../ROADMAP.md). Dante defines exactly two networks; there is no third.
+
 ## Does it work with Dante Via?
 
 Yes, at the audio-transport level (RX/TX channels appear in matrix).

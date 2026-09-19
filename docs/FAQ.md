@@ -58,6 +58,13 @@ Pode, com cautela. A stack é alpha-mas-usável (segundo o Inferno). Limitaçõe
 
 Recomendação: faça um teste de regressão de uma semana antes de depender em produção. Se fizer parte de cadeia crítica, mantenha o DVS oficial Windows como fallback.
 
+## Funciona com rede secundária (redundância Primary/Secondary)?
+
+Ainda não. O SonusGrid usa uma interface só e aparece na rede como device "só primária" — funciona
+normalmente numa rede redundante, mas sem redundância para o PC. O que falta, o que bloqueia
+(precisa de um device com duas portas para capturar o protocolo) e como ajudar estão em
+[ROADMAP.md](ROADMAP.md). O Dante define exatamente duas redes; não existe "terceira".
+
 ## Funciona com Dante Via?
 
 Sim, no nível de transporte de áudio (canais RX/TX aparecem na matriz). Funcionalidades específicas do Via (descobertas USB, "headphone routing") não estão implementadas.

@@ -165,6 +165,8 @@ no login.
 ```
 
 Arquitetura interna, decisões e limites em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Funcionalidades futuras (redundância Primary/Secondary, failover de interface) em
+[docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Problemas?
 

@@ -205,6 +205,7 @@ install: build
 	install -Dm 0644 docs/FAQ.md $(DESTDIR)$(PREFIX)/share/doc/sonusgrid/FAQ.md
 	install -Dm 0644 docs/TROUBLESHOOTING.md $(DESTDIR)$(PREFIX)/share/doc/sonusgrid/TROUBLESHOOTING.md
 	install -Dm 0644 docs/INSTALL.md $(DESTDIR)$(PREFIX)/share/doc/sonusgrid/INSTALL.md
+	install -Dm 0644 docs/ROADMAP.md $(DESTDIR)$(PREFIX)/share/doc/sonusgrid/ROADMAP.md
 	install -Dm 0644 docs/en/USER_GUIDE.md $(DESTDIR)$(PREFIX)/share/doc/sonusgrid/en/USER_GUIDE.md
 	install -Dm 0644 docs/en/FAQ.md $(DESTDIR)$(PREFIX)/share/doc/sonusgrid/en/FAQ.md
 	install -Dm 0644 docs/en/TROUBLESHOOTING.md $(DESTDIR)$(PREFIX)/share/doc/sonusgrid/en/TROUBLESHOOTING.md
