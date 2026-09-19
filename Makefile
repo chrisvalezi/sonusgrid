@@ -194,6 +194,9 @@ install: build
 	install -Dm 0644 gui/sonus-gtk/data/io.sonusgrid.SonusGrid.desktop $(DESTDIR)$(PREFIX)/share/applications/io.sonusgrid.SonusGrid.desktop
 	install -Dm 0644 gui/sonus-gtk/data/icons/hicolor/scalable/apps/io.sonusgrid.SonusGrid.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/io.sonusgrid.SonusGrid.svg
 	install -Dm 0644 gui/sonus-gtk/data/icons/hicolor/symbolic/apps/io.sonusgrid.SonusGrid-symbolic.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/symbolic/apps/io.sonusgrid.SonusGrid-symbolic.svg
+	for s in 16 24 32 48 64 128 256 512; do \
+	    install -Dm 0644 gui/sonus-gtk/data/icons/hicolor/$${s}x$${s}/apps/io.sonusgrid.SonusGrid.png $(DESTDIR)$(PREFIX)/share/icons/hicolor/$${s}x$${s}/apps/io.sonusgrid.SonusGrid.png; \
+	done
 	install -Dm 0644 gui/sonus-gtk/data/io.sonusgrid.SonusGrid.metainfo.xml $(DESTDIR)$(PREFIX)/share/metainfo/io.sonusgrid.SonusGrid.metainfo.xml
 	mkdir -p $(DESTDIR)$(PREFIX)/share/sonusgrid/gui
 	cp -r gui/sonus-gtk/sonus_gtk $(DESTDIR)$(PREFIX)/share/sonusgrid/gui/
@@ -224,6 +227,7 @@ uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/share/applications/io.sonusgrid.SonusGrid.desktop
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/io.sonusgrid.SonusGrid.svg
 	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/symbolic/apps/io.sonusgrid.SonusGrid-symbolic.svg
+	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/io.sonusgrid.SonusGrid.png
 	rm -f $(DESTDIR)$(PREFIX)/share/metainfo/io.sonusgrid.SonusGrid.metainfo.xml
 
 clean:
