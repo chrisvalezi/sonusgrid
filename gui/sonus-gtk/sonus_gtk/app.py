@@ -105,7 +105,7 @@ class SonusApp(Adw.Application):
         add("docs", lambda *_: self._open_doc("USER_GUIDE.md"))
         add("daw-guide", lambda *_: self._open_doc("DAW.md"))
         add("page", lambda _a, p: self.window.navigate(p.get_string()), None, GLib.VariantType.new("s"))
-        for i, tag in enumerate(("status", "routing", "config", "diagnostics"), start=1):
+        for i, tag in enumerate(("status", "mixer", "routing", "config", "diagnostics"), start=1):
             self.set_accels_for_action(f"app.page::{tag}", [f"<Primary>{i}"])
 
     def _open_doc(self, name: str) -> None:

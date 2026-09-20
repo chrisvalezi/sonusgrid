@@ -38,7 +38,7 @@ Ele reúne, num único pacote:
 | **SonusGrid Engine** (Rust, fork do [Inferno](https://github.com/teodly/inferno)) | plug-in ALSA que fala o protocolo Dante (ARC/CMC/DBC, RTP, mDNS) |
 | **sonusgrid-bridge** (Rust) | ponte full-duplex PipeWire ↔ JACK ↔ ALSA em um só processo |
 | **sonusgrid** (Rust) | CLI: `start`, `stop`, `status`, `doctor`, `logs`, `config` |
-| **GUI** (GTK4 / libadwaita) | estado com lock PTP ao vivo, dispositivos Dante na rede, configuração, diagnóstico e logs |
+| **GUI** (GTK4 / libadwaita) | estado com lock PTP ao vivo, **mixer com faders e medidores**, dispositivos Dante na rede, configuração, diagnóstico e logs |
 
 <!-- SCREENSHOT: tela principal (Status) da GUI -->
 <p align="center">
@@ -132,6 +132,7 @@ Detalhes, verificação de downloads, cross-compile ARM64: [docs/INSTALL.md](doc
 |---|---|
 | `sonusgrid start` / `stop` / `restart` | liga/desliga os dois serviços (relógio PTP + ponte de áudio) |
 | `sonusgrid status [--json]` | estado dos serviços, sink PipeWire e cliente JACK |
+| `sonusgrid mixer [show\|master <dB>\|mute on\|set tx\|rx <ch> <dB>\|meters]` | faders, mutes e medidores (mesmo controle da página Mixer) |
 | `sonusgrid doctor` | diagnóstico completo, bilíngue — **rode isto antes de pedir ajuda** |
 | `sonusgrid logs [clock\|audio] [-f]` | journal dos serviços |
 | `sonusgrid config init\|show\|edit\|check` | gerencia `~/.config/sonusgrid/config.toml` |

@@ -64,3 +64,11 @@
 
 /* Row that is highlighted while unsaved */
 row.sg-warn-row { background: alpha(@warning_color, 0.08); }
+
+/* ---- mixer ------------------------------------------------------------------------ */
+.sg-strip { padding: 10px 8px; border-radius: 12px; min-width: 96px; }
+.sg-master { min-width: 120px; background: alpha(@accent_bg_color, 0.08); }
+.sg-strip scale.vertical { min-height: 160px; }
+.sg-mute { font-weight: 800; min-width: 32px; }
+.sg-mute:checked { background: @error_bg_color; color: @error_fg_color; }
+.sg-mute-master { padding-left: 18px; padding-right: 18px; }

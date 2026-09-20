@@ -22,6 +22,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   apply/discard bar and external-change reload, and a **diagnostics** page
   with `doctor` rendered as a checklist plus an in-app log viewer. All CLI
   calls are asynchronous; no deprecated libadwaita API.
+- **Mixer** (GUI page + `sonusgrid mixer`): master fader, per-pair faders
+  with L/R link and mute for both TX (PC → Dante) and RX (Dante → PC),
+  peak meters drawn at the display's frame rate (channel meters pre-master,
+  master meter post). Gains are applied in the bridge with slewing, never
+  above 0 dB, persisted to `~/.config/sonusgrid/mixer.toml` and restored on
+  start. On first run the master fader inherits the sink's previous volume
+  and the PipeWire sink is set to 100 %, so loudness does not change.
+- The engine zeroes the ALSA capture buffer on prepare — unsubscribed RX
+  channels used to deliver heap garbage (full-scale noise) to `SonusGrid_RX`.
 - `sonusgrid status --json` now reports `ptp` (state, locked, offset,
   delay, grandmaster) read from Statime's observation socket.
 - `sonusgrid devices [--json]` — native mDNS discovery of Dante devices on

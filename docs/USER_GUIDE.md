@@ -107,6 +107,23 @@ O SonusGrid expõe **dois caminhos de captura**, dependendo do app:
   `SonusGrid-JACK:rx_01..rx_NN` recebem áudio multicanal direto, sem o limite de
   2 canais. Veja [DAW.md](./DAW.md).
 
+### Volume — o Mixer
+
+Todo o volume do que vai para a rede Dante é controlado na página **Mixer** da GUI (ou por
+`sonusgrid mixer`): um fader **MASTER** com mudo, e um fader por par de canais (1-2, 3-4…)
+com mudo e *link* L/R — tanto para **Saída → Dante** quanto para **Entrada ← Dante**.
+
+- Os medidores dos canais mostram o sinal **antes** do master; o medidor do MASTER mostra o
+  que realmente sai. Atualizam na taxa da sua tela (60 fps num monitor de 60 Hz).
+- Nunca há ganho acima de 0 dB. Os níveis são salvos em `~/.config/sonusgrid/mixer.toml` e
+  voltam iguais no próximo start — nunca "sobem sozinhos".
+- O sink PipeWire "SonusGrid" fica fixo em 100 %; se algum app o alterar, o `doctor` avisa e
+  o próximo `sonusgrid restart` normaliza (o mixer preserva o nível real).
+- Na primeira execução, o master herda o volume que o sink tinha — o som não muda um dB.
+
+Com caixas amplificadas no máximo (Genelec, etc.), use o MASTER como seu controle de
+segurança: comece baixo e suba devagar.
+
 ### Parando
 
 ```bash

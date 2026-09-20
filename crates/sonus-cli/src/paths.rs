@@ -60,6 +60,18 @@ pub fn observe_socket_path() -> PathBuf {
     runtime_dir().join("statime-observe.sock")
 }
 
+/// Persisted mixer gains/mutes (next to config.toml).
+pub fn mixer_state_path() -> PathBuf {
+    dirs::config_dir()
+        .unwrap_or_else(std::env::temp_dir)
+        .join("sonusgrid")
+        .join("mixer.toml")
+}
+
+/// Mixer control socket / meters file published by the bridge.
+pub fn mixer_socket_path() -> PathBuf { runtime_dir().join("mixer.sock") }
+pub fn meters_path() -> PathBuf { runtime_dir().join("meters") }
+
 /// FIFO the bridge writes RX audio into; `module-pipe-source` reads it.
 pub fn rx_fifo_path(cfg: &Config) -> PathBuf {
     runtime_dir().join(format!("{}_RX.fifo", cfg.bridge.sink_name))

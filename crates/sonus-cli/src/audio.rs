@@ -96,7 +96,49 @@ pub fn ensure_sink(cfg: &Config) -> Result<()> {
     }
 
     std::thread::sleep(std::time::Duration::from_millis(400));
+    normalize_sink_volume(cfg);
     Ok(())
+}
+
+/// The SonusGrid mixer (in the bridge) is the single volume control for
+/// what goes to the Dante network, so the PipeWire sink itself is kept at
+/// unity (100 %). WirePlumber restores whatever the sink was last set to
+/// (e.g. a cautious 7 %); the *first* time we see that, we fold it into the
+/// mixer's master fader so the real loudness does not change by a single
+/// dB — then set the sink to 100 %.
+fn normalize_sink_volume(cfg: &Config) {
+    let state = paths::mixer_state_path();
+    if !state.exists() {
+        if let Some((db, muted)) = sink_volume_db(&cfg.bridge.sink_name) {
+            let master = db.max(-80.0);
+            let text = format!(
+                "# SonusGrid mixer state — created on first run from the previous sink volume ({db:.1} dB).\nmaster_db = {master:.1}\nmaster_mute = {muted}\n"
+            );
+            if let Some(dir) = state.parent() { let _ = std::fs::create_dir_all(dir); }
+            match std::fs::write(&state, text) {
+                Ok(()) => eprintln!("[sonusgrid] mixer: master fader set to {master:.1} dB (was the sink volume); sink now at 100 %"),
+                Err(e) => { eprintln!("[sonusgrid] mixer: cannot write {} ({e}); leaving sink volume alone", state.display()); return; }
+            }
+        }
+    }
+    let _ = Command::new("pactl").args(["set-sink-mute", &cfg.bridge.sink_name, "0"]).status();
+    let _ = Command::new("pactl").args(["set-sink-volume", &cfg.bridge.sink_name, "100%"]).status();
+}
+
+/// (dB, muted) of a sink as reported by pactl. -inf → -80 dB.
+pub fn sink_volume_db(sink: &str) -> Option<(f32, bool)> {
+    let out = Command::new("pactl").args(["get-sink-volume", sink]).output().ok()?;
+    if !out.status.success() { return None; }
+    let s = String::from_utf8_lossy(&out.stdout);
+    // pactl prints e.g. "front-left: 6864 /  10% / -58.79 dB" — take the dB.
+    let toks: Vec<&str> = s.split_whitespace().collect();
+    let db = toks.windows(2)
+        .find(|w| w[1].starts_with("dB"))
+        .and_then(|w| if w[0] == "-inf" { Some(-80.0) } else { w[0].parse::<f32>().ok() })
+        .map(|d| d.clamp(-80.0, 0.0))?;
+    let muted = Command::new("pactl").args(["get-sink-mute", sink]).output().ok()
+        .map(|o| String::from_utf8_lossy(&o.stdout).contains("yes")).unwrap_or(false);
+    Some((db, muted))
 }
 
 /// Load the virtual source (RX side) if not already present. Idempotent.
@@ -198,6 +240,8 @@ pub fn run_relay_foreground(cfg: &Config) -> Result<()> {
     let rt = paths::runtime_dir();
     cmd.env("TMPDIR", &rt);
     cmd.env("INFERNO_CLOCK_PATH", paths::clock_socket_path());
+    let mixer_state = paths::mixer_state_path().display().to_string();
+    let runtime = paths::runtime_dir().display().to_string();
     cmd.args([
         "--sink-name", cfg.bridge.sink_name.as_str(),
         "--rx-pipe",   rx_pipe.as_str(),
@@ -205,6 +249,8 @@ pub fn run_relay_foreground(cfg: &Config) -> Result<()> {
         "--rate",      rate.as_str(),
         "--channels",  chans.as_str(),
         "--period",    "256",
+        "--runtime-dir", runtime.as_str(),
+        "--mixer-state", mixer_state.as_str(),
     ]);
     // When jack_enabled = false, pass an empty client name to skip JACK
     // registration entirely. The bridge keeps the Pulse + ALSA path running.

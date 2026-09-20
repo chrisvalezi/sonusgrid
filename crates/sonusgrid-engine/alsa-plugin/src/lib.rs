@@ -334,6 +334,21 @@ unsafe extern "C" fn plugin_prepare(io: *mut snd_pcm_ioplug_t) -> c_int {
     }
     debug!("period size: {}", (*io).period_size);
 
+    // SonusGrid: libasound hands us an *uninitialised* mmap buffer. For
+    // capture, channels that never get a subscription are never written by
+    // the receiver, so the app would read heap garbage (full-scale noise on
+    // the desktop's SonusGrid_RX source). Zero the whole buffer once.
+    if (*io).stream == SND_PCM_STREAM_CAPTURE {
+        for area in channels_areas {
+            let bytes_per_sample = (bits_per_sample / 8) as usize;
+            let step_bytes = (area.step / 8) as usize;
+            let base = area.addr.byte_offset((area.first / 8) as isize) as *mut u8;
+            for i in 0..(*io).buffer_size as usize {
+                std::ptr::write_bytes(base.add(i * step_bytes), 0, bytes_per_sample);
+            }
+        }
+    }
+
     let channels_buffers = channels_areas
         .iter()
         .enumerate()

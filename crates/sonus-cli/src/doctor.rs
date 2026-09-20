@@ -277,10 +277,13 @@ pub fn run(cfg_path: &Path, _lang: crate::text::Lang, json_out: bool) -> Result<
     //     "the video plays and I hear nothing", so say it out loud.
     #[cfg(target_os = "linux")]
     if let Some(pct) = sink_volume_percent(&cfg.bridge.sink_name) {
-        if pct < 20 {
-            greens.push(format!("✓ sink {} a {pct}% de volume (baixo de propósito? ajuste no pavucontrol se precisar)", cfg.bridge.sink_name));
+        if pct == 100 {
+            greens.push(format!("✓ sink {} em 100% (o volume real é o Mixer do SonusGrid)", cfg.bridge.sink_name));
         } else {
-            greens.push(format!("✓ sink {} a {pct}% de volume", cfg.bridge.sink_name));
+            problems.push(Problem {
+                pt: format!("sink {} está em {pct}% — o volume deve ser controlado no Mixer do SonusGrid; rode `sonusgrid restart` para normalizar (o mixer preserva o nível)", cfg.bridge.sink_name),
+                en: format!("sink {} is at {pct}% — volume should be controlled in the SonusGrid Mixer; run `sonusgrid restart` to normalise (the mixer keeps the level)", cfg.bridge.sink_name),
+            });
         }
     }
 

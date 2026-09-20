@@ -79,7 +79,7 @@ def show_details(parent: Gtk.Widget, heading: str, details: str) -> None:
 def show_shortcuts(parent: Gtk.Widget) -> None:
     rows = [
         ("F5", _t("Atualizar estado", "Refresh status")),
-        ("Ctrl+1 … Ctrl+4", _t("Trocar de página", "Switch page")),
+        ("Ctrl+1 … Ctrl+5", _t("Trocar de página", "Switch page")),
         ("Ctrl+Q", _t("Sair", "Quit")),
         ("F10", _t("Menu principal", "Primary menu")),
     ]

@@ -9,6 +9,7 @@ from sonus_gtk import dialogs
 from sonus_gtk.i18n import _t
 from sonus_gtk.pages.config import ConfigPage
 from sonus_gtk.pages.diagnostics import DiagnosticsPage
+from sonus_gtk.pages.mixer import MixerPage
 from sonus_gtk.pages.routing import RoutingPage
 from sonus_gtk.pages.status import StatusPage
 from sonus_gtk.services.status import Phase
@@ -16,6 +17,7 @@ from sonus_gtk.widgets.sidebar import SidebarRow
 
 PAGES = [
     ("status", ("Estado", "Status"), "audio-card-symbolic"),
+    ("mixer", ("Mixer", "Mixer"), "audio-speakers-symbolic"),
     ("routing", ("Rede Dante", "Dante network"), "network-workgroup-symbolic"),
     ("config", ("Configuração", "Configuration"), "preferences-system-symbolic"),
     ("diagnostics", ("Diagnóstico", "Diagnostics"), "emblem-system-symbolic"),
@@ -75,6 +77,7 @@ class SonusWindow(Adw.ApplicationWindow):
         # ---- pages
         self.pages = {
             "status": StatusPage(app),
+            "mixer": MixerPage(app),
             "routing": RoutingPage(app),
             "config": ConfigPage(app),
             "diagnostics": DiagnosticsPage(app),
@@ -84,8 +87,8 @@ class SonusWindow(Adw.ApplicationWindow):
         # ---- breakpoint (collapse sidebar on narrow windows)
         bp = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 600sp"))
         bp.add_setter(self.split, "collapsed", True)
-        bp.connect("apply", lambda *_: self.pages["diagnostics"].set_collapsed(True))
-        bp.connect("unapply", lambda *_: self.pages["diagnostics"].set_collapsed(False))
+        bp.connect("apply", lambda *_: (self.pages["diagnostics"].set_collapsed(True), self.pages["mixer"].set_collapsed(True)))
+        bp.connect("unapply", lambda *_: (self.pages["diagnostics"].set_collapsed(False), self.pages["mixer"].set_collapsed(False)))
         self.add_breakpoint(bp)
 
         app.status.connect("updated", lambda *_: self._update_dots())

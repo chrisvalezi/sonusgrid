@@ -42,6 +42,8 @@
 //! mode — system audio still works. The JACK rings stay empty, so the mix
 //! is a no-op.
 
+mod mixer;
+
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -77,6 +79,14 @@ struct Cli {
     /// ALSA period size in frames. 256 ≈ 5.3 ms at 48 kHz; 128 ≈ 2.7 ms.
     #[arg(long, default_value_t = 256)]
     period: u32,
+    /// Directory for the mixer control socket and meters file
+    /// (normally $XDG_RUNTIME_DIR/sonusgrid). Empty = mixer IPC disabled.
+    #[arg(long, default_value = "")]
+    runtime_dir: String,
+    /// Where mixer gains/mutes are persisted (normally
+    /// ~/.config/sonusgrid/mixer.toml). Empty = don't persist.
+    #[arg(long, default_value = "")]
+    mixer_state: String,
     /// JACK client name for the DAW path. Set to empty string to disable JACK.
     /// Must differ from the PipeWire sink name: tools that pick a target by
     /// node.name (WirePlumber stream restore, pw-play --target) would
@@ -183,6 +193,16 @@ fn main() -> Result<()> {
     let channels = args.channels as usize;
     let period = args.period as usize;
 
+    let mix = mixer::Mixer::new(
+        channels, args.rate, args.period,
+        if args.mixer_state.is_empty() { None } else { Some(std::path::PathBuf::from(&args.mixer_state)) },
+    );
+    if !args.runtime_dir.is_empty() {
+        if let Err(e) = mix.serve(std::path::Path::new(&args.runtime_dir)) {
+            log::warn!("mixer IPC disabled: {e}");
+        }
+    }
+
     log::info!(
         "ALSA {} period={} ch={} rate={}",
         args.alsa, args.period, args.channels, args.rate
@@ -242,8 +262,13 @@ fn main() -> Result<()> {
     let stop_tx = stop.clone();
     let tx_jack_rings_tx = tx_jack_rings.clone();
     let rate_hz = args.rate;
+    let mix_tx = std::sync::Arc::clone(&mix);
     let tx = std::thread::spawn(move || {
         set_realtime("TX thread", 70);
+        let mut fader = mixer::Fader::new(channels + 1); // last slot = master
+        let mut gain = vec![0f32; channels];
+        let mut peak = vec![0f32; channels];
+        let mut mpeak: [f32; 2];
         let mut pa_errors: u32 = 0;
         let mut pa_buf = vec![0u8; period * 2 * 4]; // i32 LE × 2ch × period
         let mut alsa_buf = vec![0i32; period * channels];
@@ -283,6 +308,13 @@ fn main() -> Result<()> {
             //    channel 0 = PA-left  + JACK[0]
             //    channel 1 = PA-right + JACK[1]
             //    channel c = JACK[c]   for c >= 2
+            // Fader targets for this period (slewed to avoid zipper noise).
+            for c in 0..channels {
+                gain[c] = fader.step(c, mix_tx.tx_target(c));
+                peak[c] = 0.0;
+            }
+            let master = fader.step(channels, mix_tx.master_target());
+            mpeak = [0.0, 0.0];
             for f in 0..period {
                 let pa_l = i32::from_le_bytes(pa_buf[f * 8..f * 8 + 4].try_into().unwrap());
                 let pa_r = i32::from_le_bytes(pa_buf[f * 8 + 4..f * 8 + 8].try_into().unwrap());
@@ -295,9 +327,21 @@ fn main() -> Result<()> {
                     let jack = tx_jack_rings_tx[c].pop()
                         .map(f32_to_i32)
                         .unwrap_or(0);
-                    alsa_buf[f * channels + c] = mix_sat(pa, jack);
+                    let mixed = mix_sat(pa, jack);
+                    // Channel fader (pre-master) → channel meter; then master → output.
+                    let pre = mixed as f32 * gain[c];
+                    let a = i32_to_f32(pre as i32).abs();
+                    if a > peak[c] { peak[c] = a; }
+                    let v = (pre * master) as i32;
+                    let side = c & 1;
+                    let am = i32_to_f32(v).abs();
+                    if am > mpeak[side] { mpeak[side] = am; }
+                    alsa_buf[f * channels + c] = v;
                 }
             }
+            for c in 0..channels { mix_tx.tx_peak_update(c, peak[c]); }
+            mix_tx.master_peak_update(0, mpeak[0]);
+            mix_tx.master_peak_update(1, mpeak[1]);
 
             // 3. Push to ALSA. On xrun, recover and refill one period of
             //    silence so the device starts streaming again immediately.
@@ -315,8 +359,12 @@ fn main() -> Result<()> {
     // ---------------- RX thread (ALSA capture → FIFO + JACK rings) ----------
     let stop_rx = stop.clone();
     let rx_jack_rings_rx = rx_jack_rings.clone();
+    let mix_rx = std::sync::Arc::clone(&mix);
     let rx = std::thread::spawn(move || {
         set_realtime("RX thread", 70);
+        let mut fader = mixer::Fader::new(channels);
+        let mut gain = vec![0f32; channels];
+        let mut peak = vec![0f32; channels];
         let pcm_io = match alsa_cap.io_i32() {
             Ok(io) => io,
             Err(e) => { log::error!("RX io_i32: {e}"); return; }
@@ -336,7 +384,17 @@ fn main() -> Result<()> {
                     continue;
                 }
             }
+            for c in 0..channels {
+                gain[c] = fader.step(c, mix_rx.rx_target(c));
+                peak[c] = 0.0;
+            }
             for f in 0..period {
+                for c in 0..channels {
+                    let v = (alsa_buf[f * channels + c] as f32 * gain[c]) as i32;
+                    let a = i32_to_f32(v).abs();
+                    if a > peak[c] { peak[c] = a; }
+                    alsa_buf[f * channels + c] = v;
+                }
                 // 1. Stereo slice (channels 0+1) → pipe-source FIFO.
                 let l = alsa_buf[f * channels + 0].to_le_bytes();
                 let r = alsa_buf[f * channels + 1].to_le_bytes();
@@ -353,6 +411,7 @@ fn main() -> Result<()> {
                     }
                 }
             }
+            for c in 0..channels { mix_rx.rx_peak_update(c, peak[c]); }
             if rx_fifo.write_all(&fifo_buf).is_err() {
                 log::warn!("RX FIFO write failed; FIFO leg disabled (JACK leg continues)");
                 // Don't return — keep feeding JACK rings even if pipe-source

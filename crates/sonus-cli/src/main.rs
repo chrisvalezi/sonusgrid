@@ -13,6 +13,8 @@ mod doctor;
 mod logs;
 #[cfg(target_os = "linux")]
 mod mdns;
+#[cfg(target_os = "linux")]
+mod mixer_cli;
 mod paths;
 #[cfg(target_os = "linux")]
 mod ptp;
@@ -90,6 +92,15 @@ enum Cmd {
         #[arg(long)]
         json: bool,
     },
+    /// Mixer: show/set faders and mutes, read the meters (see `mixer --help`).
+    Mixer {
+        /// show | master <dB> | mute on|off | set tx|rx <ch> <dB> | mute tx|rx <ch> on|off | meters
+        #[arg(trailing_var_arg = true)]
+        args: Vec<String>,
+        /// Emit JSON.
+        #[arg(long)]
+        json: bool,
+    },
     /// Run end-to-end diagnostics (PTP, ALSA, PipeWire, systemd).
     Doctor {
         /// Emit machine-readable JSON instead of the bilingual report.
@@ -152,6 +163,10 @@ fn main() -> Result<()> {
         Cmd::Route => routing::open_pavucontrol(&cfg_path, lang),
         Cmd::Devices { json } => routing::list_devices(&cfg_path, lang, json),
         Cmd::Doctor { json } => doctor::run(&cfg_path, lang, json),
+        #[cfg(target_os = "linux")]
+        Cmd::Mixer { args, json } => mixer_cli::run(&args, json),
+        #[cfg(target_os = "macos")]
+        Cmd::Mixer { .. } => anyhow::bail!("mixer is Linux-only for now"),
         Cmd::Version => {
             println!("sonusgrid {VERSION}");
             println!("{DISCLAIMER}");
