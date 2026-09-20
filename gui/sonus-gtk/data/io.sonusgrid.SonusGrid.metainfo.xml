@@ -20,6 +20,7 @@
   <keywords><keyword>dante</keyword><keyword>aoip</keyword><keyword>ptp</keyword><keyword>jack</keyword><keyword>pipewire</keyword></keywords>
   <screenshots>
     <screenshot type="default"><image>https://raw.githubusercontent.com/chrisvalezi/sonusgrid/main/docs/images/status.png</image><caption>Status</caption></screenshot>
+    <screenshot><image>https://raw.githubusercontent.com/chrisvalezi/sonusgrid/main/docs/images/mixer.png</image><caption>Mixer</caption></screenshot>
     <screenshot><image>https://raw.githubusercontent.com/chrisvalezi/sonusgrid/main/docs/images/config.png</image><caption>Configuration</caption></screenshot>
   </screenshots>
   <releases>

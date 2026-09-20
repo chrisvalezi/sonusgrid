@@ -121,9 +121,14 @@ Detalhes, verificação de downloads, cross-compile ARM64: [docs/INSTALL.md](doc
    (`sonusgrid route` abre o pavucontrol já na aba certa). Para gravar da rede, a fonte
    **SonusGrid_RX** aparece como um microfone.
 
-<!-- SCREENSHOT: aba Roteamento -->
+<!-- SCREENSHOT: Mixer -->
 <p align="center">
-  <img src="docs/images/routing.png" width="720" alt="SonusGrid — roteamento">
+  <img src="docs/images/mixer.png" width="720" alt="SonusGrid — mixer com faders e medidores">
+</p>
+
+<!-- SCREENSHOT: Rede Dante -->
+<p align="center">
+  <img src="docs/images/routing.png" width="720" alt="SonusGrid — dispositivos Dante na rede">
 </p>
 
 ### Comandos do CLI
