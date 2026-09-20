@@ -16,6 +16,8 @@ ExecStartPre=/usr/bin/sonusgrid _internal-wait-network
 ExecStart=/usr/bin/sonusgrid _internal-statime-exec
 Restart=on-failure
 RestartSec=3
+# 78 = EX_CONFIG from `sonusgrid config check`: fix the config, then `sonusgrid start`.
+RestartPreventExitStatus=78
 Environment=XDG_RUNTIME_DIR=/run/user/%U
 # Sockets live in %t/sonusgrid (= $XDG_RUNTIME_DIR/sonusgrid). Preserve so
 # the audio unit's engine can keep talking to the clock across restarts.

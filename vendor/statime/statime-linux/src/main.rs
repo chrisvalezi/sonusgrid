@@ -333,8 +333,47 @@ struct ClockExportGuard {
     pub grace_period_until: Option<Time>,
 }
 
-#[tokio::main]
-async fn main() {
+/// SonusGrid: ask for SCHED_FIFO on the calling thread. Statime's PTP
+/// processing is latency-sensitive: under host load its measurements arrive
+/// late, the filter steps by milliseconds and the audio engine sees a
+/// "clock jump". Direct `sched_setscheduler` needs RLIMIT_RTPRIO (usually 0
+/// in a `systemd --user` session), so fall back to rtkit like the bridge.
+fn request_realtime() {
+    let param = libc::sched_param { sched_priority: 40 };
+    if unsafe { libc::sched_setscheduler(0, libc::SCHED_FIFO, &param) } == 0 {
+        log::info!("realtime scheduling: SCHED_FIFO 40");
+        return;
+    }
+    let rl = libc::rlimit { rlim_cur: 200_000, rlim_max: 200_000 };
+    unsafe { libc::setrlimit(libc::RLIMIT_RTTIME, &rl) };
+    let pid = std::process::id();
+    let tid = unsafe { libc::syscall(libc::SYS_gettid) } as u64;
+    let out = std::process::Command::new("busctl")
+        .args([
+            "--system", "--timeout=3", "call",
+            "org.freedesktop.RealtimeKit1", "/org/freedesktop/RealtimeKit1",
+            "org.freedesktop.RealtimeKit1", "MakeThreadRealtimeWithPID", "ttu",
+            &pid.to_string(), &tid.to_string(), "20",
+        ])
+        .output();
+    match out {
+        Ok(o) if o.status.success() => log::info!("realtime scheduling: SCHED_FIFO 20 via rtkit"),
+        Ok(o) => log::warn!("no realtime scheduling for PTP thread (rtkit: {})", String::from_utf8_lossy(&o.stderr).trim()),
+        Err(e) => log::warn!("no realtime scheduling for PTP thread (busctl: {e})"),
+    }
+}
+
+fn main() {
+    // A single-threaded runtime: one RT thread does all PTP work, instead of
+    // a pool of normal-priority workers that the scheduler can starve.
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("tokio runtime")
+        .block_on(async_main());
+}
+
+async fn async_main() {
     actual_main().await;
 }
 
@@ -353,6 +392,7 @@ async fn actual_main() {
     ));
 
     log::info!("Clock identity: {}", hex::encode(clock_identity.0));
+    request_realtime();
 
     let instance_config = InstanceConfig {
         clock_identity,

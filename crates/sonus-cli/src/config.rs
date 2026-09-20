@@ -218,5 +218,9 @@ pub fn cmd_check(path: &Path, lang: Lang, quiet: bool) -> Result<()> {
         dual_println(&p.pt, &p.en);
     }
     let _ = lang;
-    anyhow::bail!("config check failed ({} problems)", problems.len());
+    // EX_CONFIG. The systemd units list this in RestartPreventExitStatus so a
+    // broken/empty config doesn't turn into an endless 3-second restart loop
+    // (seen: 130 000 restarts from a stray config in another user session).
+    eprintln!("config check failed ({} problem(s))", problems.len());
+    std::process::exit(78);
 }

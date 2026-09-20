@@ -12,6 +12,8 @@ ExecStart=/usr/bin/sonusgrid _internal-bridge-exec
 ExecStop=/usr/bin/sonusgrid _internal-bridge-stop
 Restart=on-failure
 RestartSec=3
+# 78 = EX_CONFIG from `sonusgrid config check`: fix the config, then `sonusgrid start`.
+RestartPreventExitStatus=78
 Environment=XDG_RUNTIME_DIR=/run/user/%U
 # Use PipeWire's libjack (PipeWire-jack compat) so the bridge's JACK client
 # integrates with the PipeWire graph instead of failing on the missing jackd2

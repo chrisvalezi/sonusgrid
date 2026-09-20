@@ -51,19 +51,18 @@ fn rx_source_name(cfg: &Config) -> String {
 /// reuse a leftover module: tear it down and create a fresh one, always in
 /// the same order (sink, then source).
 ///
-/// SonusGrid is *opt-in* per-app, never the system default. Two layers
-/// protect that intent:
-///  - `priority.session=0` + `node.dont-reconnect=true` properties tell
-///    the session manager not to promote it.
-///  - We snapshot the user's existing default sink before our load and
-///    restore it afterwards if WirePlumber promoted us anyway.
+/// SonusGrid is *opt-in*: `priority.session=0` keeps WirePlumber from
+/// auto-promoting it to default output. If the user *chose* it as default
+/// (configured default in WirePlumber state), WirePlumber restores that
+/// choice as soon as the sink reappears — and we must not undo it. An
+/// earlier version snapshotted the previous default and reverted to it,
+/// which silently moved the desktop's audio away from Dante after every
+/// bridge restart.
 pub fn ensure_sink(cfg: &Config) -> Result<()> {
     if let Some(idx) = module_index_for("module-null-sink", "sink_name", &cfg.bridge.sink_name) {
         let _ = Command::new("pactl").args(["unload-module", &idx]).status();
         std::thread::sleep(std::time::Duration::from_millis(200));
     }
-
-    let prior_default = current_default_sink();
 
     // pipewire-pulse splits module args on whitespace and does not honour
     // "\ " escapes, so a description with spaces was silently truncated.
@@ -97,16 +96,6 @@ pub fn ensure_sink(cfg: &Config) -> Result<()> {
     }
 
     std::thread::sleep(std::time::Duration::from_millis(400));
-    if let Some(prior) = prior_default {
-        if prior != cfg.bridge.sink_name {
-            let now = current_default_sink();
-            if now.as_deref() == Some(cfg.bridge.sink_name.as_str()) {
-                let _ = Command::new("pactl")
-                    .args(["set-default-sink", &prior])
-                    .status();
-            }
-        }
-    }
     Ok(())
 }
 
@@ -149,19 +138,6 @@ pub fn ensure_source(cfg: &Config) -> Result<()> {
     Ok(())
 }
 
-fn current_default_sink() -> Option<String> {
-    let out = Command::new("pactl").arg("info").output().ok()?;
-    if !out.status.success() {
-        return None;
-    }
-    let s = String::from_utf8_lossy(&out.stdout);
-    for line in s.lines() {
-        if let Some(rest) = line.strip_prefix("Default Sink:") {
-            return Some(rest.trim().to_string());
-        }
-    }
-    None
-}
 
 /// Find the PipeWire/Pulse module index that owns `<key>=<value>` in its
 /// argument string (e.g. `sink_name=SonusGrid`). Returns None if not loaded.

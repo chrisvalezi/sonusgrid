@@ -45,6 +45,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   and stream-restore target it). The bridge now tears down and recreates
   its sink and source on every start, in a fixed order; sink descriptions
   with spaces are no longer truncated. `doctor` reports the sink volume.
+- **Clock jumps under host load**: Statime now runs its PTP loop on a single
+  SCHED_FIFO thread (rtkit fallback) instead of a normal-priority pool, so
+  a busy machine no longer produces millisecond steps that made the engine
+  restart its transmitter ("clock jumped"). PTPv1 `DelayReq` chatter is no
+  longer logged as a warning.
+- **Bridge killed by the rtkit watchdog**: the TX thread no longer spins at
+  RT priority when the PulseAudio connection dies (it paces itself and
+  exits cleanly after ~10 s so systemd restarts it).
+- **Desktop output lost after a bridge restart**: `ensure_sink` no longer
+  reverts the default sink WirePlumber restores; if SonusGrid is your
+  chosen output it stays the output.
+- **Endless restarts on a broken config**: `config check` exits 78
+  (EX_CONFIG) and the units carry `RestartPreventExitStatus=78`. (A stray
+  config in another user session had produced 130 000 restarts.)
 - **"Start does nothing"**: `sonusgrid start` now tells you when systemd
   --user accepted but never ran the job, and `doctor` flags a spinning user
   manager and duplicated GUI instances (11 stale 0.2.x GUIs polling 45×/s

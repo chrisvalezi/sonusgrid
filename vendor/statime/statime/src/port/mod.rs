@@ -541,7 +541,9 @@ impl<'a, A: AcceptableMasterList, C: Clock, F: Filter, R: Rng, S: PtpInstanceSta
                     },
                     MessageBodyV1::DelayReq(_delay_request) => {
                         // TODO
-                        warn!("got DelayReq, master operation not implemented yet for PTPv1");
+                        // SonusGrid: DelayReq is multicast in PTPv1, so every slave sees the
+                        // other slaves' requests — this fired 150×/min. Not an error.
+                        log::debug!("got DelayReq, master operation not implemented yet for PTPv1");
                         //self.handle_delay_req(message.header, delay_request, timestamp)
                         actions![]
                     }

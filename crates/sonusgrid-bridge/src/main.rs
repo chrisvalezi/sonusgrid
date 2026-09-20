@@ -241,8 +241,10 @@ fn main() -> Result<()> {
     // ---------------- TX thread (PA monitor + JACK rings → ALSA playback) ---
     let stop_tx = stop.clone();
     let tx_jack_rings_tx = tx_jack_rings.clone();
+    let rate_hz = args.rate;
     let tx = std::thread::spawn(move || {
         set_realtime("TX thread", 70);
+        let mut pa_errors: u32 = 0;
         let mut pa_buf = vec![0u8; period * 2 * 4]; // i32 LE × 2ch × period
         let mut alsa_buf = vec![0i32; period * channels];
         let silence = vec![0i32; period * channels];
@@ -255,10 +257,26 @@ fn main() -> Result<()> {
             // 1. Read one period of stereo s32le from PA monitor.
             let pa_ok = pa_record.read(&mut pa_buf).is_ok();
             if !pa_ok {
-                log::warn!("PA read transient error; writing silence this period");
+                pa_errors += 1;
+                if pa_errors == 1 || pa_errors % 200 == 0 {
+                    log::warn!("PA read error #{pa_errors}; writing silence (is pipewire-pulse alive?)");
+                }
                 // PA might come back; clear pa_buf so the mix below is a no-op
                 // for the casual leg and only the JACK leg is heard.
                 for b in pa_buf.iter_mut() { *b = 0; }
+                // pa_simple_read returns immediately on a dead connection.
+                // This thread is SCHED_FIFO under rtkit's RTTIME watchdog:
+                // spinning here without blocking gets the whole process
+                // SIGKILLed within 200 ms. Pace ourselves to one period.
+                std::thread::sleep(std::time::Duration::from_micros(
+                    (period as u64 * 1_000_000) / rate_hz as u64,
+                ));
+                if pa_errors > 2000 {
+                    log::error!("PulseAudio connection dead for {pa_errors} periods — exiting so systemd restarts the bridge");
+                    return;
+                }
+            } else {
+                pa_errors = 0;
             }
 
             // 2. For each frame, build the 16-ch interleaved ALSA buffer:
@@ -286,7 +304,10 @@ fn main() -> Result<()> {
             if let Err(e) = pcm_io.writei(&alsa_buf) {
                 log::debug!("TX xrun: {e:?}; recover");
                 let _ = alsa_pb.try_recover(e, true);
-                let _ = pcm_io.writei(&silence);
+                if pcm_io.writei(&silence).is_err() {
+                    // Device gone / persistent error: don't spin at RT prio.
+                    std::thread::sleep(std::time::Duration::from_millis(5));
+                }
             }
         }
     });
@@ -309,7 +330,9 @@ fn main() -> Result<()> {
                 Ok(_) => {}
                 Err(e) => {
                     log::debug!("RX xrun: {e:?}; recover");
-                    let _ = alsa_cap.try_recover(e, true);
+                    if alsa_cap.try_recover(e, true).is_err() {
+                        std::thread::sleep(std::time::Duration::from_millis(5));
+                    }
                     continue;
                 }
             }
